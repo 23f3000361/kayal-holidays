@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     ...(can(user.role, "enquiries.view") ? [{ href: "/admin/enquiries", label: "Inbox", icon: "inbox" as const, badge: counts?.unanswered || undefined, alert: !!counts?.overdue }] : []),
     { href: "/admin/packages", label: "Packages", icon: "package" as const },
     ...(can(user.role, "blog.edit") ? [{ href: "/admin/blog", label: "Journal", icon: "journal" as const }] : []),
+    ...(can(user.role, "users.manage") ? [{ href: "/admin/users", label: "Team", icon: "team" as const }] : []),
     ...(can(user.role, "audit.view") ? [{ href: "/admin/activity", label: "Activity", icon: "activity" as const }] : []),
   ];
 
