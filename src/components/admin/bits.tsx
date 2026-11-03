@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Globe, Mail, MessageCircle, MessagesSquare, Phone } from "lucide-react";
 import { slaState } from "@/lib/sla";
 import { Badge, cx } from "@/components/ui";
@@ -50,16 +50,30 @@ function fmtMins(m: number) {
   return a % 60 ? `${h} h ${a % 60} min` : `${h} h`;
 }
 
+// One shared 30-second clock for every badge on the page. The server snapshot is 0,
+// so badges render after hydration and never mismatch the server HTML.
+const clock = { now: 0, subs: new Set<() => void>(), timer: undefined as ReturnType<typeof setInterval> | undefined };
+function subscribe(cb: () => void) {
+  clock.subs.add(cb);
+  if (clock.subs.size === 1) {
+    clock.now = Date.now();
+    clock.timer = setInterval(() => {
+      clock.now = Date.now();
+      clock.subs.forEach((f) => f());
+    }, 30_000);
+  }
+  return () => {
+    clock.subs.delete(cb);
+    if (clock.subs.size === 0) clearInterval(clock.timer);
+  };
+}
+const useNow = () => useSyncExternalStore(subscribe, () => clock.now, () => 0);
+
 /** Live countdown to the one-working-hour reply target. */
 export function SlaBadge({ createdAt, firstReplyAt, closed }: { createdAt: string | Date; firstReplyAt: string | Date | null; closed?: boolean }) {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    setNow(new Date());
-    const t = setInterval(() => setNow(new Date()), 30_000);
-    return () => clearInterval(t);
-  }, []);
+  const now = useNow();
   if (!now) return <Badge tone="neutral" className="opacity-0">—</Badge>;
-  const s = slaState(new Date(createdAt), firstReplyAt ? new Date(firstReplyAt) : null, now);
+  const s = slaState(new Date(createdAt), firstReplyAt ? new Date(firstReplyAt) : null, new Date(now));
   if (s.kind === "done") return <Badge tone={s.withinTarget ? "ok" : "neutral"}>{`Replied in ${fmtMins(s.minutes)}`}</Badge>;
   if (closed) return null;
   if (s.overdue) return <Badge tone="danger">{`Overdue ${fmtMins(s.minutesLeft)}`}</Badge>;

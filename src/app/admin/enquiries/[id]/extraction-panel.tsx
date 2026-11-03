@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle, Bot, CheckCircle2, RotateCcw } from "lucide-react";
 import { confirmFieldsAction } from "@/app/admin/actions";
-import { FX_TO_INR, LOW_CONFIDENCE, type ExtractedFields, type FieldKey, type Span } from "@/lib/ai/extract";
+import { FX_TO_INR, LOW_CONFIDENCE, QUOTE_FIELDS, type ExtractedFields, type FieldKey, type Span } from "@/lib/ai/extract";
 import { THEMES, type Theme } from "@/lib/package-content";
 import { Alert, Badge, Button, Card, Spinner, inputClass, cx } from "@/components/ui";
 import { Confidence } from "@/components/admin/bits";
@@ -73,7 +73,8 @@ function segments(message: string, fields: ExtractedFields) {
 }
 
 function Row({ k, label, f, active, setActive, children }: { k: FieldKey; label: string; f: ExtractedFields[FieldKey]; active: FieldKey | null; setActive: (k: FieldKey | null) => void; children: React.ReactNode }) {
-  const weak = !f || f.confidence < LOW_CONFIDENCE;
+  const required = QUOTE_FIELDS.includes(k);
+  const weak = f ? f.confidence < LOW_CONFIDENCE : required;
   return (
     <div
       onMouseEnter={() => setActive(k)}
@@ -83,7 +84,7 @@ function Row({ k, label, f, active, setActive, children }: { k: FieldKey; label:
     >
       <div className="flex items-center gap-2 sm:block">
         <p className="text-sm font-medium text-ink-2">{label}</p>
-        <div className="sm:mt-1">{f ? <Confidence value={f.confidence} /> : <Badge tone="warn">Not found</Badge>}</div>
+        <div className="sm:mt-1">{f ? <Confidence value={f.confidence} /> : <Badge tone={required ? "warn" : "neutral"}>{required ? "Not found" : "None"}</Badge>}</div>
       </div>
       <div className="min-w-0">
         {children}
@@ -149,10 +150,10 @@ export function ExtractionPanel(props: {
 
         <div className="mt-2 divide-y divide-line">
           <Row k="adults" label="Adults" f={fields.adults} active={active} setActive={setActive}>
-            <input type="number" min={1} aria-label="Adults" value={v.adults} onChange={(e) => set("adults", e.target.value)} className={cx(inputClass, "w-28")} />
+            <input type="number" min={1} aria-label="Extracted adults" value={v.adults} onChange={(e) => set("adults", e.target.value)} className={cx(inputClass, "w-28")} />
           </Row>
           <Row k="children" label="Children" f={fields.children} active={active} setActive={setActive}>
-            <input type="number" min={0} aria-label="Children" value={v.children} onChange={(e) => set("children", e.target.value)} className={cx(inputClass, "w-28")} />
+            <input type="number" min={0} aria-label="Extracted children" value={v.children} onChange={(e) => set("children", e.target.value)} className={cx(inputClass, "w-28")} />
           </Row>
           <Row k="travelDates" label="Dates" f={fields.travelDates} active={active} setActive={setActive}>
             <div className="flex flex-wrap items-center gap-2">

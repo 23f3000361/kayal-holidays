@@ -2,7 +2,7 @@ import Link from "next/link";
 import { and, gte, inArray, isNull, or, eq } from "drizzle-orm";
 import { ArrowRight, CalendarClock, PencilLine } from "lucide-react";
 import { db, schema as s } from "@/db";
-import { requireUser } from "@/server/auth";
+import { requireUser, type CurrentUser } from "@/server/auth";
 import { adminListPackages } from "@/server/packages";
 import { can } from "@/lib/permissions";
 import { SLA_MINUTES, workingMinutesBetween } from "@/lib/sla";
@@ -16,6 +16,27 @@ function median(xs: number[]) {
   const a = [...xs].sort((x, y) => x - y);
   const m = Math.floor(a.length / 2);
   return a.length % 2 ? a[m] : Math.round((a[m - 1] + a[m]) / 2);
+}
+
+/** Reply-time figures for the last 30 days, scoped to what this user may see. */
+async function enquiryStats(user: CurrentUser, now: Date) {
+  const scope = can(user.role, "enquiries.viewAll") ? undefined : or(eq(s.enquiries.assignedToId, user.id), isNull(s.enquiries.assignedToId));
+  const since = new Date(now.getTime() - 30 * 86_400_000);
+  const [open, recent] = await Promise.all([
+    db.select({ e: s.enquiries, assignee: s.users.name }).from(s.enquiries).leftJoin(s.users, eq(s.users.id, s.enquiries.assignedToId)).where(and(inArray(s.enquiries.status, ["new"]), isNull(s.enquiries.firstReplyAt), scope)).orderBy(s.enquiries.dueAt),
+    db.select().from(s.enquiries).where(and(gte(s.enquiries.createdAt, since), scope)),
+  ]);
+  const times = recent.filter((e) => e.firstReplyAt && e.status !== "spam").map((e) => workingMinutesBetween(e.createdAt, e.firstReplyAt!));
+  const within = times.filter((t) => t <= SLA_MINUTES).length;
+  return {
+    open,
+    recent,
+    times,
+    within,
+    pct: times.length ? Math.round((within / times.length) * 100) : null,
+    overdue: open.filter((x) => x.e.dueAt < now).length,
+    med: median(times),
+  };
 }
 
 function Stat({ label, value, note, tone }: { label: string; value: React.ReactNode; note?: string; tone?: "danger" | "ok" }) {
@@ -37,18 +58,7 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
   const seeEnquiries = can(user.role, "enquiries.view");
   let enquiryBlock: React.ReactNode = null;
   if (seeEnquiries) {
-    const scope = can(user.role, "enquiries.viewAll") ? undefined : or(eq(s.enquiries.assignedToId, user.id), isNull(s.enquiries.assignedToId));
-    const since = new Date(Date.now() - 30 * 86_400_000);
-    const [open, recent] = await Promise.all([
-      db.select({ e: s.enquiries, assignee: s.users.name }).from(s.enquiries).leftJoin(s.users, eq(s.users.id, s.enquiries.assignedToId)).where(and(inArray(s.enquiries.status, ["new"]), isNull(s.enquiries.firstReplyAt), scope)).orderBy(s.enquiries.dueAt),
-      db.select().from(s.enquiries).where(and(gte(s.enquiries.createdAt, since), scope)),
-    ]);
-    const answered = recent.filter((e) => e.firstReplyAt && e.status !== "spam");
-    const times = answered.map((e) => workingMinutesBetween(e.createdAt, e.firstReplyAt!));
-    const within = times.filter((t) => t <= SLA_MINUTES).length;
-    const pct = times.length ? Math.round((within / times.length) * 100) : null;
-    const overdue = open.filter((x) => x.e.dueAt.getTime() < Date.now()).length;
-    const med = median(times);
+    const { open, recent, times, within, pct, overdue, med } = await enquiryStats(user, new Date());
 
     enquiryBlock = (
       <>

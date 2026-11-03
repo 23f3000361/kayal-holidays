@@ -13,11 +13,6 @@ export type LivePackage = { id: string; code: string; slug: string; versionNo: n
 
 type Release = typeof s.packageVersions.$inferSelect;
 
-async function releasesFor(packageIds?: string[]) {
-  const where = packageIds ? and(eq(s.packageVersions.kind, "release"), inArray(s.packageVersions.packageId, packageIds)) : eq(s.packageVersions.kind, "release");
-  return db.select().from(s.packageVersions).where(where);
-}
-
 function groupLive(pkgs: (typeof s.packages.$inferSelect)[], releases: Release[], now: Date): LivePackage[] {
   const byPkg = new Map<string, Release[]>();
   for (const r of releases) byPkg.set(r.packageId, [...(byPkg.get(r.packageId) ?? []), r]);

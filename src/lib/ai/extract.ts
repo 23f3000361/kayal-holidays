@@ -90,12 +90,6 @@ function inferYear(m: number, d: number, today: Date): number {
   return candidate >= t ? y : y + 1;
 }
 
-function addDays(isoDate: string, days: number): string {
-  const d = new Date(isoDate + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
 function daysBetween(a: string, b: string) {
   return Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
 }
