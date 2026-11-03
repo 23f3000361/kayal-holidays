@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import legacyRedirects from "./src/data/legacy-redirects.json";
 
 const nextConfig: NextConfig = {
   // Public pages use classic ISR (revalidate + revalidatePath on publish).
@@ -17,10 +16,6 @@ const nextConfig: NextConfig = {
     qualities: [60, 75],
   },
   serverExternalPackages: ["@libsql/client", "@react-pdf/renderer"],
-  async redirects() {
-    // Old freelancer-site URLs -> new clean URLs (permanent, so search engines move rank over).
-    return legacyRedirects.map((r) => ({ source: r.from, destination: r.to, permanent: true }));
-  },
   async headers() {
     return [
       {

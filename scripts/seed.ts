@@ -13,6 +13,8 @@ import fs from "node:fs";
 import * as s from "../src/db/schema";
 import { SEED_PACKAGES } from "../src/data/packages";
 import { SEED_POSTS } from "../src/data/posts";
+import LEGACY from "../src/data/legacy-redirects.json";
+import { normalizePath } from "../src/lib/redirects";
 import { extractRules } from "../src/lib/ai/extract";
 import { dueAt } from "../src/lib/sla";
 import { priceParty } from "../src/lib/pricing";
@@ -39,7 +41,7 @@ async function main() {
     return;
   }
   if (reset) {
-    for (const t of [s.blogPosts, s.auditLog, s.quotes, s.messages, s.enquiryEvents, s.enquiries, s.media, s.packageVersions, s.packages, s.sessions, s.users, s.counters]) await db.delete(t);
+    for (const t of [s.redirects, s.blogPosts, s.auditLog, s.quotes, s.messages, s.enquiryEvents, s.enquiries, s.media, s.packageVersions, s.packages, s.sessions, s.users, s.counters]) await db.delete(t);
   }
 
   // ---- People -------------------------------------------------------------
@@ -187,6 +189,9 @@ async function main() {
     const at = ago(p.daysAgo * DAY);
     await db.insert(s.blogPosts).values({ slug: p.slug, draft: p.content, published: p.content, publishAt: at, authorId: U[p.author], createdAt: at, updatedAt: at });
   }
+
+  // ---- Old-site redirects (sample of the 140; the real list comes from a crawl) ----
+  await db.insert(s.redirects).values(LEGACY.map((r, i) => ({ fromPath: normalizePath(r.from)!, toPath: r.to, hits: [41, 17, 9, 63, 5, 22, 3, 88, 12, 0, 7, 2, 0, 4, 1, 0, 6, 0][i] ?? 0, createdById: U.editor, createdAt: ago(40 * DAY) })));
 
   // ---- Activity log ----------------------------------------------------------
   await db.insert(s.auditLog).values([

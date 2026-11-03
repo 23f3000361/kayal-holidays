@@ -15,6 +15,13 @@
       "when": 1793722790089,
       "tag": "0001_blog",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793726747887,
+      "tag": "0002_redirects",
+      "breakpoints": true
     }
   ]
 }

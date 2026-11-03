@@ -180,3 +180,14 @@ export const blogPosts = sqliteTable(
   },
   (t) => [index("blog_publish_idx").on(t.publishAt)],
 );
+
+/** Old-site URLs that permanently redirect to new pages. Checked by the proxy on every request. */
+export const redirects = sqliteTable("redirects", {
+  id: id(),
+  fromPath: text("from_path").notNull().unique(), // normalised: lower case, no trailing slash
+  toPath: text("to_path").notNull(),
+  hits: integer("hits").notNull().default(0),
+  lastHitAt: integer("last_hit_at", { mode: "timestamp_ms" }),
+  createdById: text("created_by_id").references(() => users.id),
+  createdAt: createdAt(),
+});
