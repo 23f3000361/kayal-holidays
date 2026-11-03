@@ -190,7 +190,7 @@ export async function getEnquiryDetail(id: string, user: CurrentUser) {
     suggestions,
     draft,
     requestedPackage: requested ? { id: requested.id, title: requested.content.title, slug: requested.slug } : null,
-    livePackages: live.map((p) => ({ id: p.id, code: p.code, title: p.content.title, durationDays: p.content.durationDays })),
+    livePackages: live.map((p) => ({ id: p.id, code: p.code, title: p.content.title, durationDays: p.content.durationDays, seasons: p.content.seasons, childPercent: p.content.childPercent, gstPercent: p.content.gstPercent })),
   };
 }
 
