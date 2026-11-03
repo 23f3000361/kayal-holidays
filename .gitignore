@@ -44,3 +44,7 @@ next-env.d.ts
 /data/*.db
 /data/*.db-*
 !.env.example
+
+# playwright
+/test-results/
+/playwright-report/
