@@ -6,7 +6,8 @@ import { packageContentSchema, publishProblems, emptyContent, type PackageConten
 import { seasonCoverage, lowestPrice } from "@/lib/pricing";
 import { resolveLive, supersededBy, upcoming } from "@/lib/versions";
 import { regionSlug } from "@/lib/regions";
-import { audit } from "./audit";
+import { audit, lastActor } from "./audit";
+import { fingerprint, type Conflict } from "@/lib/conflict";
 import { ActionError, type CurrentUser } from "./auth";
 
 export type LivePackage = { id: string; code: string; slug: string; versionNo: number; publishedAt: Date; content: PackageContent };
@@ -97,15 +98,18 @@ export function revalidatePublic(slug: string, region?: string) {
   revalidatePath("/blog", "layout"); // posts embed package cards and prices
 }
 
-export async function saveDraft(id: string, input: unknown, user: CurrentUser) {
+export async function saveDraft(id: string, input: unknown, user: CurrentUser, baseHash?: string): Promise<{ ok: true; hash: string } | { ok: false; errors?: { path: string; message: string }[]; conflict?: Conflict }> {
   const parsed = packageContentSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, errors: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) };
   const [pkg] = await db.select().from(s.packages).where(eq(s.packages.id, id)).limit(1);
   if (!pkg) throw new ActionError("Package not found");
+  const [current] = await db.select({ content: s.packageVersions.content }).from(s.packageVersions).where(and(eq(s.packageVersions.packageId, id), eq(s.packageVersions.kind, "draft"))).limit(1);
+  // Someone else saved since this editor loaded the draft: refuse rather than overwrite.
+  if (baseHash && current && fingerprint(current.content) !== baseHash) return { ok: false, conflict: await lastActor(id, ["package.draft", "package.restore"]) };
   await db.update(s.packageVersions).set({ content: parsed.data, authorId: user.id, createdAt: new Date() }).where(and(eq(s.packageVersions.packageId, id), eq(s.packageVersions.kind, "draft")));
   await db.update(s.packages).set({ updatedAt: new Date() }).where(eq(s.packages.id, id));
   await audit(user.id, "package.draft", "package", id, `Saved draft of ${pkg.code}`);
-  return { ok: true as const };
+  return { ok: true, hash: fingerprint(parsed.data) };
 }
 
 export async function publishDraft(id: string, opts: { publishAt?: Date; note: string }, user: CurrentUser) {

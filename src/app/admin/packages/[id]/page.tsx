@@ -11,6 +11,7 @@ import credits from "@/data/photo-credits.json";
 import { Alert } from "@/components/ui";
 import { PageHeader } from "@/components/admin/bits";
 import { PackageEditor } from "./editor";
+import { fingerprint } from "@/lib/conflict";
 
 export const metadata: Metadata = { title: "Edit package" };
 export const dynamic = "force-dynamic";
@@ -42,6 +43,7 @@ export default async function EditPackagePage({ params, searchParams }: { params
         code={ed.pkg.code}
         slug={ed.pkg.slug}
         draft={ed.draft}
+        draftHash={fingerprint(ed.draft)}
         live={ed.live?.content ?? null}
         liveVersion={ed.live?.versionNo ?? null}
         statusLabel={ed.status.label}

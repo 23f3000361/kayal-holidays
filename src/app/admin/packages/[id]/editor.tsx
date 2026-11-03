@@ -14,6 +14,7 @@ import { PhotosEditor, type LibraryItem } from "./photos-editor";
 import { PublishDialog } from "./publish-dialog";
 
 type Props = {
+  draftHash: string;
   id: string; code: string; slug: string; draft: PackageContent; live: PackageContent | null; liveVersion: number | null;
   statusLabel: string; scheduledAt: string | null; scheduledReleases: { versionNo: number; publishAt: string }[]; hasReleases: boolean; library: LibraryItem[]; canEdit: boolean; canPublish: boolean; canUpload: boolean; savedAt: string;
 };
@@ -28,6 +29,9 @@ export function PackageEditor(p: Props) {
   const [saved, setSaved] = useState<PackageContent>(p.draft);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
+  // Fingerprint of the draft this screen is based on; a save is refused if someone else changed it.
+  const [base, setBase] = useState(p.draftHash);
+  const [conflict, setConflict] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
   const [busy, startBusy] = useTransition();
   const [publishing, setPublishing] = useState(false);
@@ -40,13 +44,17 @@ export function PackageEditor(p: Props) {
   const save = useCallback(
     (then?: () => void) =>
       startSave(async () => {
-        const r = await saveDraftAction(p.id, c);
+        const r = await saveDraftAction(p.id, c, base);
         if (r.ok) {
+          setBase(r.data!.hash);
+          setConflict(null);
           setSaved(c);
           setErrors({});
           setFlash({ ok: true, text: "Draft saved" });
           router.refresh();
           then?.();
+        } else if (r.conflict) {
+          setConflict(r.error);
         } else {
           const map: Record<string, string> = {};
           for (const e of r.fieldErrors ?? []) map[e.path] ??= e.message;
@@ -54,7 +62,7 @@ export function PackageEditor(p: Props) {
           setFlash({ ok: false, text: `${r.error} ${Object.values(map).slice(0, 2).join(" ")}` });
         }
       }),
-    [c, p.id, router],
+    [c, p.id, router, base],
   );
 
   // Ctrl/Cmd+S saves; leaving with unsaved changes asks first.
@@ -89,6 +97,14 @@ export function PackageEditor(p: Props) {
 
   return (
     <div>
+      {conflict && (
+        <div role="alert" className="border-b border-danger/30 bg-danger-soft">
+          <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-danger sm:px-8">
+            <p><b>Not saved.</b> {conflict}</p>
+            <Button size="sm" variant="danger" onClick={() => window.location.reload()}>Reload the latest draft</Button>
+          </div>
+        </div>
+      )}
       {/* Sticky action bar */}
       <div className="sticky top-[104px] z-20 border-b border-line bg-surface/95 backdrop-blur lg:top-0">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8">

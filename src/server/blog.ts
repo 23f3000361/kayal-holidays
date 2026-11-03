@@ -3,7 +3,8 @@ import { revalidatePath } from "next/cache";
 import { and, desc, eq, isNotNull, lte } from "drizzle-orm";
 import { db, schema as s } from "@/db";
 import { categorySlug, emptyPost, isLive, postContentSchema, postProblems, postStatus, type PostContent } from "@/lib/blog";
-import { audit } from "./audit";
+import { audit, lastActor } from "./audit";
+import { fingerprint, type Conflict } from "@/lib/conflict";
 import { ActionError, type CurrentUser } from "./auth";
 import { getLivePackages, slugify } from "./packages";
 
@@ -66,14 +67,15 @@ export async function createPost(title: string, user: CurrentUser) {
   return p.id;
 }
 
-export async function savePostDraft(id: string, input: unknown, user: CurrentUser) {
+export async function savePostDraft(id: string, input: unknown, user: CurrentUser, baseHash?: string): Promise<{ ok: true; hash: string } | { ok: false; errors?: { path: string; message: string }[]; conflict?: Conflict }> {
   const parsed = postContentSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, errors: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })) };
   const ed = await getPostForEditor(id);
   if (!ed) throw new ActionError("Post not found");
+  if (baseHash && fingerprint(ed.post.draft) !== baseHash) return { ok: false, conflict: await lastActor(id, ["post.draft"]) };
   await db.update(s.blogPosts).set({ draft: parsed.data, updatedAt: new Date() }).where(eq(s.blogPosts.id, id));
   await audit(user.id, "post.draft", "post", id, `Saved draft of "${parsed.data.title}"`);
-  return { ok: true as const };
+  return { ok: true, hash: fingerprint(parsed.data) };
 }
 
 export async function publishPost(id: string, publishAt: Date | undefined, user: CurrentUser) {

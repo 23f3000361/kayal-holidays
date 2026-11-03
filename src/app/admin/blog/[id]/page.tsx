@@ -10,6 +10,7 @@ import { getLivePackages } from "@/server/packages";
 import credits from "@/data/photo-credits.json";
 import { PageHeader } from "@/components/admin/bits";
 import { PostEditor } from "./post-editor";
+import { fingerprint } from "@/lib/conflict";
 
 export const metadata: Metadata = { title: "Edit post" };
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function EditPostPage({ params }: { params: Promise<{ id: s
         id={ed.post.id}
         slug={ed.post.slug}
         draft={ed.post.draft}
+        draftHash={fingerprint(ed.post.draft)}
         status={ed.status}
         live={ed.live}
         publishAt={ed.post.publishAt?.toISOString() ?? null}

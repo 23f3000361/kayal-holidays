@@ -10,6 +10,7 @@ import { signPreview } from "@/server/signing";
 import { CHANNELS, STATUSES } from "@/lib/constants";
 import { REGIONS, THEMES } from "@/lib/package-content";
 import type { FieldKey } from "@/lib/ai/extract";
+import { conflictMessage } from "@/lib/conflict";
 
 export type ActionResult<T = undefined> = { ok: true; data?: T; message?: string } | { ok: false; error: string; fieldErrors?: { path: string; message: string }[] };
 
@@ -28,13 +29,14 @@ const uuid = z.string().uuid();
 
 // ---------------- Packages ----------------
 
-export async function saveDraftAction(id: string, content: unknown): Promise<ActionResult> {
+export async function saveDraftAction(id: string, content: unknown, baseHash?: string): Promise<ActionResult<{ hash: string }> & { conflict?: boolean }> {
   const user = await authorize("packages.edit");
-  const res = await pk.saveDraft(uuid.parse(id), content, user);
+  const res = await pk.saveDraft(uuid.parse(id), content, user, baseHash ? z.string().max(32).parse(baseHash) : undefined);
+  if (!res.ok && res.conflict) return { ok: false, conflict: true, error: conflictMessage(res.conflict) };
   if (!res.ok) return { ok: false, error: "Some fields need attention.", fieldErrors: res.errors };
   revalidatePath(`/admin/packages/${id}`);
   revalidatePath("/admin/packages");
-  return { ok: true, message: "Draft saved" };
+  return { ok: true, message: "Draft saved", data: { hash: res.hash } };
 }
 
 export async function publishAction(id: string, input: { publishAt?: string; note: string }) {

@@ -13,7 +13,7 @@ import { Counter } from "@/app/admin/packages/[id]/fields";
 import { PhotosEditor, type LibraryItem } from "@/app/admin/packages/[id]/photos-editor";
 
 type Pkg = { slug: string; code: string; content: PackageContent };
-type Props = { id: string; slug: string; draft: PostContent; status: string; live: boolean; publishAt: string | null; categories: string[]; packages: Pkg[]; library: LibraryItem[] };
+type Props = { draftHash: string; id: string; slug: string; draft: PostContent; status: string; live: boolean; publishAt: string | null; categories: string[]; packages: Pkg[]; library: LibraryItem[] };
 type Suggestion = { slug: string; title: string; score: number; why: string };
 
 export function PostEditor(p: Props) {
@@ -21,6 +21,8 @@ export function PostEditor(p: Props) {
   const [c, setC] = useState<PostContent>(p.draft);
   const [saved, setSaved] = useState<PostContent>(p.draft);
   const [flash, setFlash] = useState<{ ok: boolean; text: string } | null>(null);
+  const [base, setBase] = useState(p.draftHash);
+  const [conflict, setConflict] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, startSave] = useTransition();
   const [busy, startBusy] = useTransition();
@@ -36,13 +38,17 @@ export function PostEditor(p: Props) {
   const save = useCallback(
     (then?: () => void) =>
       startSave(async () => {
-        const r = await savePostAction(p.id, c);
+        const r = await savePostAction(p.id, c, base);
         if (r.ok) {
+          setBase(r.data!.hash);
+          setConflict(null);
           setSaved(c);
           setErrors({});
           setFlash({ ok: true, text: "Draft saved" });
           router.refresh();
           then?.();
+        } else if (r.conflict) {
+          setConflict(r.error);
         } else {
           const map: Record<string, string> = {};
           for (const e of r.fieldErrors ?? []) map[e.path] ??= e.message;
@@ -50,7 +56,7 @@ export function PostEditor(p: Props) {
           setFlash({ ok: false, text: `${r.error} ${Object.values(map).slice(0, 2).join(" ")}` });
         }
       }),
-    [c, p.id, router],
+    [c, p.id, router, base],
   );
 
   useEffect(() => {
@@ -106,8 +112,9 @@ export function PostEditor(p: Props) {
         router.refresh();
       };
       if (dirty) {
-        const r = await savePostAction(p.id, c);
-        if (!r.ok) return setFlash({ ok: false, text: r.error });
+        const r = await savePostAction(p.id, c, base);
+        if (!r.ok) return r.conflict ? setConflict(r.error) : setFlash({ ok: false, text: r.error });
+        setBase(r.data!.hash);
         setSaved(c);
       }
       await go();
@@ -118,6 +125,14 @@ export function PostEditor(p: Props) {
 
   return (
     <div>
+      {conflict && (
+        <div role="alert" className="border-b border-danger/30 bg-danger-soft">
+          <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm text-danger sm:px-8">
+            <p><b>Not saved.</b> {conflict}</p>
+            <Button size="sm" variant="danger" onClick={() => window.location.reload()}>Reload the latest draft</Button>
+          </div>
+        </div>
+      )}
       <div className="sticky top-[104px] z-20 border-b border-line bg-surface/95 backdrop-blur lg:top-0">
         <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-8">
           <div className="flex flex-wrap items-center gap-3">

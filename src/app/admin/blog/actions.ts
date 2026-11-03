@@ -8,6 +8,7 @@ import * as blog from "@/server/blog";
 import { getLivePackages } from "@/server/packages";
 import { suggestRelated } from "@/lib/blog";
 import type { ActionResult } from "@/app/admin/actions";
+import { conflictMessage } from "@/lib/conflict";
 
 const uuid = z.string().uuid();
 
@@ -30,13 +31,14 @@ export async function createPostAction(_: unknown, form: FormData): Promise<Acti
   redirect(`/admin/blog/${id}`);
 }
 
-export async function savePostAction(id: string, content: unknown): Promise<ActionResult> {
+export async function savePostAction(id: string, content: unknown, baseHash?: string): Promise<ActionResult<{ hash: string }> & { conflict?: boolean }> {
   const user = await authorize("blog.edit");
-  const r = await blog.savePostDraft(uuid.parse(id), content, user);
+  const r = await blog.savePostDraft(uuid.parse(id), content, user, baseHash ? z.string().max(32).parse(baseHash) : undefined);
+  if (!r.ok && r.conflict) return { ok: false, conflict: true, error: conflictMessage(r.conflict) };
   if (!r.ok) return { ok: false, error: "Some fields need attention.", fieldErrors: r.errors };
   revalidatePath(`/admin/blog/${id}`);
   revalidatePath("/admin/blog");
-  return { ok: true, message: "Draft saved" };
+  return { ok: true, message: "Draft saved", data: { hash: r.hash } };
 }
 
 export async function publishPostAction(id: string, publishAt?: string) {
