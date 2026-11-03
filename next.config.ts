@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/avif", "image/webp"],
+    qualities: [60, 75],
   },
   serverExternalPackages: ["@libsql/client", "@react-pdf/renderer"],
   async redirects() {

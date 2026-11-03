@@ -39,7 +39,7 @@ export default async function DestinationPage({ params }: { params: Promise<{ re
           <EmptyState title={`No ${region} packages online right now`} body="We still plan trips here. Tell us what you'd like." action={<ButtonLink href="/enquire">Plan a custom trip</ButtonLink>} />
         ) : (
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
-            {items.map((p, i) => <PackageCard key={p.id} slug={p.slug} content={p.content} priority={i < 3} />)}
+            {items.map((p, i) => <PackageCard key={p.id} slug={p.slug} content={p.content} priority={i === 0} />)}
           </div>
         )}
       </section>
