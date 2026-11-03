@@ -12,6 +12,7 @@ import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import * as s from "../src/db/schema";
 import { SEED_PACKAGES } from "../src/data/packages";
+import { SEED_POSTS } from "../src/data/posts";
 import { extractRules } from "../src/lib/ai/extract";
 import { dueAt } from "../src/lib/sla";
 import { priceParty } from "../src/lib/pricing";
@@ -38,7 +39,7 @@ async function main() {
     return;
   }
   if (reset) {
-    for (const t of [s.auditLog, s.quotes, s.messages, s.enquiryEvents, s.enquiries, s.media, s.packageVersions, s.packages, s.sessions, s.users, s.counters]) await db.delete(t);
+    for (const t of [s.blogPosts, s.auditLog, s.quotes, s.messages, s.enquiryEvents, s.enquiries, s.media, s.packageVersions, s.packages, s.sessions, s.users, s.counters]) await db.delete(t);
   }
 
   // ---- People -------------------------------------------------------------
@@ -181,6 +182,12 @@ async function main() {
   for (const [k, at] of Object.entries(lastAssigned)) await db.update(s.users).set({ lastAssignedAt: at }).where(sql`${s.users.id} = ${U[k]}`);
   await db.insert(s.counters).values([{ name: "enquiry", value: enqNo }, { name: "quote", value: quoteNo }]);
 
+  // ---- Journal ----------------------------------------------------------------
+  for (const p of SEED_POSTS) {
+    const at = ago(p.daysAgo * DAY);
+    await db.insert(s.blogPosts).values({ slug: p.slug, draft: p.content, published: p.content, publishAt: at, authorId: U[p.author], createdAt: at, updatedAt: at });
+  }
+
   // ---- Activity log ----------------------------------------------------------
   await db.insert(s.auditLog).values([
     { actorId: U.editor, action: "package.publish", entityType: "package", entityId: PKG["PKG-KL-07"].id, summary: "Published PKG-KL-07 v2: Monsoon rate revised to ₹24,900", createdAt: ago(21 * DAY) },
@@ -189,7 +196,7 @@ async function main() {
     { actorId: U.editor, action: "package.draft", entityType: "package", entityId: PKG["PKG-SI-12"].id, summary: "Edited draft of PKG-SI-12", createdAt: ago(1 * DAY) },
   ]);
 
-  console.log(`Seeded ${people.length} users, ${SEED_PACKAGES.length} packages, ${SEEDS.length} enquiries.`);
+  console.log(`Seeded ${people.length} users, ${SEED_PACKAGES.length} packages, ${SEED_POSTS.length} posts, ${SEEDS.length} enquiries.`);
   console.log(`Demo password for every account: ${DEMO_PASSWORD}`);
 }
 

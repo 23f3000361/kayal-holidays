@@ -2,6 +2,7 @@ import { sqliteTable, text, integer, index, uniqueIndex, blob } from "drizzle-or
 import type { PackageContent } from "@/lib/package-content";
 import type { Extraction } from "@/lib/ai/extract";
 import type { PriceBreakdown } from "@/lib/pricing";
+import type { PostContent } from "@/lib/blog";
 import { ROLES, CHANNELS, STATUSES } from "@/lib/constants";
 export { ROLES, CHANNELS, STATUSES } from "@/lib/constants";
 export type { Role, Channel, EnquiryStatus } from "@/lib/constants";
@@ -163,3 +164,19 @@ export const counters = sqliteTable("counters", {
   name: text("name").primaryKey(),
   value: integer("value").notNull(),
 });
+
+/** Journal posts: an editable draft plus the published copy shown on the site. */
+export const blogPosts = sqliteTable(
+  "blog_posts",
+  {
+    id: id(),
+    slug: text("slug").notNull().unique(),
+    draft: text("draft", { mode: "json" }).$type<PostContent>().notNull(),
+    published: text("published", { mode: "json" }).$type<PostContent>(),
+    publishAt: integer("publish_at", { mode: "timestamp_ms" }),
+    authorId: text("author_id").references(() => users.id),
+    createdAt: createdAt(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [index("blog_publish_idx").on(t.publishAt)],
+);

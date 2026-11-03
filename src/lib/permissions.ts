@@ -7,6 +7,7 @@ export const PERMISSIONS = {
   "packages.edit": ["admin", "editor"],
   "packages.publish": ["admin", "editor"],
   "media.upload": ["admin", "editor"],
+  "blog.edit": ["admin", "editor"],
   "enquiries.view": ["admin", "consultant"],
   "enquiries.viewAll": ["admin"],
   "enquiries.work": ["admin", "consultant"],
