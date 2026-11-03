@@ -15,7 +15,7 @@ import { PublishDialog } from "./publish-dialog";
 
 type Props = {
   id: string; code: string; slug: string; draft: PackageContent; live: PackageContent | null; liveVersion: number | null;
-  statusLabel: string; scheduledAt: string | null; hasReleases: boolean; library: LibraryItem[]; canEdit: boolean; canPublish: boolean; canUpload: boolean; savedAt: string;
+  statusLabel: string; scheduledAt: string | null; scheduledReleases: { versionNo: number; publishAt: string }[]; hasReleases: boolean; library: LibraryItem[]; canEdit: boolean; canPublish: boolean; canUpload: boolean; savedAt: string;
 };
 
 const SECTIONS = [
@@ -285,11 +285,13 @@ export function PackageEditor(p: Props) {
           draft={c}
           live={p.live}
           problems={problems}
+          scheduled={p.scheduledReleases}
           onPublish={async (input) => {
             const r = await publishAction(p.id, input);
             if (!r.ok) return r.error;
             setPublishing(false);
-            setFlash({ ok: true, text: r.data!.scheduled ? `Scheduled v${r.data!.versionNo}` : `Published v${r.data!.versionNo}. The website is updated.` });
+            const cancelled = r.data!.cancelled.length ? ` Cancelled scheduled v${r.data!.cancelled.join(", v")}.` : "";
+            setFlash({ ok: true, text: (r.data!.scheduled ? `Scheduled v${r.data!.versionNo}.` : `Published v${r.data!.versionNo}. The website is updated.`) + cancelled });
             router.refresh();
             return null;
           }}

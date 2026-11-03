@@ -10,11 +10,20 @@ import { formatINR, seasonRangeLabel } from "./pricing";
 
 export type ReleaseRef = { id: string; versionNo: number; publishAt: Date; visibility: "public" | "hidden" };
 
+/**
+ * Among releases whose time has come, the highest version number wins. So an older release
+ * scheduled for later can never override something published after it was scheduled.
+ */
 export function resolveLive<R extends ReleaseRef>(releases: R[], now: Date): R | null {
   const due = releases.filter((r) => r.publishAt.getTime() <= now.getTime());
   if (due.length === 0) return null;
-  const latest = due.reduce((a, b) => (b.publishAt > a.publishAt || (b.publishAt.getTime() === a.publishAt.getTime() && b.versionNo > a.versionNo) ? b : a));
+  const latest = due.reduce((a, b) => (b.versionNo > a.versionNo ? b : a));
   return latest.visibility === "public" ? latest : null;
+}
+
+/** Scheduled releases a new release at `at` would make unreachable (they could never become live). */
+export function supersededBy<R extends ReleaseRef>(releases: R[], at: Date, now: Date): R[] {
+  return releases.filter((r) => r.publishAt > now && r.publishAt >= at);
 }
 
 export function upcoming<R extends ReleaseRef>(releases: R[], now: Date): R[] {

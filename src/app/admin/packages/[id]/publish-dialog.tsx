@@ -6,8 +6,8 @@ import type { PackageContent, Problem } from "@/lib/package-content";
 import { diffContent } from "@/lib/versions";
 import { Alert, Button, Field, Spinner, inputClass, cx } from "@/components/ui";
 
-export function PublishDialog({ open, onClose, draft, live, problems, onPublish }: {
-  open: boolean; onClose: () => void; draft: PackageContent; live: PackageContent | null; problems: Problem[];
+export function PublishDialog({ open, onClose, draft, live, problems, scheduled, onPublish }: {
+  open: boolean; onClose: () => void; draft: PackageContent; live: PackageContent | null; problems: Problem[]; scheduled: { versionNo: number; publishAt: string }[];
   onPublish: (input: { publishAt?: string; note: string }) => Promise<string | null>;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -19,6 +19,9 @@ export function PublishDialog({ open, onClose, draft, live, problems, onPublish 
   const changes = diffContent(live, draft);
   const errors = problems.filter((p) => p.level === "error");
   const warnings = problems.filter((p) => p.level === "warning");
+  const at = mode === "later" && when ? new Date(when) : new Date();
+  const replaced = scheduled.filter((r) => new Date(r.publishAt) >= at);
+  const fmt = (iso: string) => new Date(iso).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
 
   useEffect(() => {
     const d = ref.current;
@@ -62,6 +65,11 @@ export function PublishDialog({ open, onClose, draft, live, problems, onPublish 
             </ul>
           ))}
         </div>
+        {replaced.length > 0 && (
+          <Alert tone="warn" title={`This replaces scheduled version${replaced.length > 1 ? "s" : ""} ${replaced.map((r) => "v" + r.versionNo).join(", ")}`}>
+            {replaced.map((r) => `v${r.versionNo} was due ${fmt(r.publishAt)}`).join("; ")}. It will be cancelled, because a newer version always wins. Its changes go live only if they are in this draft (check the list above). To keep a future change, schedule it again after publishing.
+          </Alert>
+        )}
         {warnings.length > 0 && <Alert tone="warn" title="Worth a look (won't block publishing)"><ul className="mt-1 list-disc pl-4">{warnings.map((p) => <li key={p.message}>{p.message}</li>)}</ul></Alert>}
         <fieldset className="grid gap-2 sm:grid-cols-2">
           <legend className="mb-2 text-sm font-medium text-ink-2">When</legend>

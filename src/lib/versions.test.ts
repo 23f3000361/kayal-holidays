@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diffContent, resolveLive, upcoming } from "./versions";
+import { diffContent, resolveLive, supersededBy, upcoming } from "./versions";
 import { publishProblems } from "./package-content";
 import { seasonCoverage } from "./pricing";
 import { SEED_PACKAGES } from "@/data/packages";
@@ -22,6 +22,19 @@ describe("resolveLive", () => {
   });
   it("re-publishing an older version after unpublish brings it back", () => {
     expect(resolveLive([r(1, "2026-10-01T00:00:00Z"), r(2, "2026-10-05T00:00:00Z", "hidden"), r(3, "2026-10-06T00:00:00Z")], new Date("2026-11-01T00:00:00Z"))?.id).toBe("v3");
+  });
+  it("never lets an older scheduled release override a newer publish", () => {
+    // v2 scheduled for December; v3 published now with an urgent fix.
+    const rs = [r(1, "2026-10-01T00:00:00Z"), r(2, "2026-12-01T00:00:00Z"), r(3, "2026-11-03T00:00:00Z")];
+    expect(resolveLive(rs, new Date("2026-11-10T00:00:00Z"))?.id).toBe("v3");
+    expect(resolveLive(rs, new Date("2026-12-05T00:00:00Z"))?.id).toBe("v3");
+  });
+  it("finds scheduled releases a new release would make unreachable", () => {
+    const now = new Date("2026-11-03T00:00:00Z");
+    const pending = [r(2, "2026-12-01T00:00:00Z"), r(3, "2027-03-01T00:00:00Z")];
+    expect(supersededBy(pending, now, now).map((x) => x.id)).toEqual(["v2", "v3"]);
+    // Scheduling after December keeps the December release.
+    expect(supersededBy(pending, new Date("2027-01-01T00:00:00Z"), now).map((x) => x.id)).toEqual(["v3"]);
   });
   it("lists upcoming releases", () => {
     expect(upcoming(releases, new Date("2026-11-03T00:00:00Z")).map((x) => x.id)).toEqual(["v3"]);

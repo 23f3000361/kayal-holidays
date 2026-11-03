@@ -46,6 +46,7 @@ export default async function EditPackagePage({ params, searchParams }: { params
         liveVersion={ed.live?.versionNo ?? null}
         statusLabel={ed.status.label}
         scheduledAt={ed.status.scheduledAt?.toISOString() ?? null}
+        scheduledReleases={ed.releases.filter((r) => r.isScheduled).map((r) => ({ versionNo: r.versionNo, publishAt: r.publishAt!.toISOString() }))}
         hasReleases={ed.releases.length > 0}
         library={library}
         canEdit={can(user.role, "packages.edit")}

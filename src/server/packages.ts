@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, lte, max } from "drizzle-orm";
 import { db, schema as s } from "@/db";
 import { packageContentSchema, publishProblems, emptyContent, type PackageContent } from "@/lib/package-content";
 import { seasonCoverage, lowestPrice } from "@/lib/pricing";
-import { resolveLive, upcoming } from "@/lib/versions";
+import { resolveLive, supersededBy, upcoming } from "@/lib/versions";
 import { regionSlug } from "@/lib/regions";
 import { audit } from "./audit";
 import { ActionError, type CurrentUser } from "./auth";
@@ -114,15 +114,22 @@ export async function publishDraft(id: string, opts: { publishAt?: Date; note: s
   if (!parsed.success) throw new ActionError("The draft has invalid fields. Save it again to see what to fix.");
   const errors = ed.problems.filter((p) => p.level === "error");
   if (errors.length) throw new ActionError(`Fix these before publishing: ${errors.map((e) => e.message).join(" ")}`);
-  const when = opts.publishAt && opts.publishAt > new Date() ? opts.publishAt : new Date();
+  const now = new Date();
+  const when = opts.publishAt && opts.publishAt > now ? opts.publishAt : now;
   const [{ n }] = await db.select({ n: max(s.packageVersions.versionNo) }).from(s.packageVersions).where(eq(s.packageVersions.packageId, id));
   const versionNo = (n ?? 0) + 1;
+  // Older releases scheduled at or after this one could never go live; cancel them openly.
+  const superseded = supersededBy(ed.releases.map((r) => ({ ...r, publishAt: r.publishAt! })), when, now);
+  for (const r of superseded) {
+    await db.delete(s.packageVersions).where(eq(s.packageVersions.id, r.id));
+    await audit(user.id, "package.cancel", "package", id, `Cancelled scheduled ${ed.pkg.code} v${r.versionNo} (replaced by v${versionNo})`);
+  }
   await db.insert(s.packageVersions).values({ packageId: id, kind: "release", versionNo, content: parsed.data, publishAt: when, note: opts.note.trim().slice(0, 200), authorId: user.id });
   await db.update(s.packages).set({ updatedAt: new Date() }).where(eq(s.packages.id, id));
   const scheduled = when.getTime() > Date.now() + 1000;
   await audit(user.id, scheduled ? "package.schedule" : "package.publish", "package", id, `${scheduled ? "Scheduled" : "Published"} ${ed.pkg.code} v${versionNo}${opts.note ? `: ${opts.note}` : ""}`);
   revalidatePublic(ed.pkg.slug, parsed.data.region);
-  return { versionNo, scheduled, when };
+  return { versionNo, scheduled, when, cancelled: superseded.map((r) => r.versionNo) };
 }
 
 export async function unpublish(id: string, user: CurrentUser) {
