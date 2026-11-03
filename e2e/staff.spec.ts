@@ -26,7 +26,7 @@ test("consultant works the sample enquiry: extraction, suggestions, reply", asyn
 
   await page.getByRole("button", { name: "Send…" }).click();
   await page.getByRole("button", { name: "Yes, send" }).click();
-  await expect(page.getByText(/Reply sent/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /Reply sent/ })).toBeVisible();
   await expect(page.locator("#status")).toHaveValue("replied");
 });
 
