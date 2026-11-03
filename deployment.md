@@ -1,6 +1,7 @@
 # Deployment and running guide: Kayal Holidays
 
 Repository: https://github.com/23f3000361/kayal-holidays
+Live app: https://kayal-holidays.vercel.app
 
 ## 1. Run it locally
 
@@ -56,8 +57,17 @@ read on each enquiry, under **Notes and history**.
 
 ## 2. How it is deployed
 
-Target set-up: **Vercel** (Next.js hosting) plus **Turso** (hosted libSQL, the same SQLite dialect
-used locally). Both have free tiers.
+Live at **https://kayal-holidays.vercel.app**: **Vercel** (Next.js hosting, functions pinned to Mumbai,
+`bom1`, in `vercel.json`) plus **Turso** (hosted libSQL, the same SQLite dialect used locally), with
+the database in Mumbai (`aws-ap-south-1`). Both are on free tiers.
+
+The current deployment was made from the CLI: `npx vercel link`, the variables below added with
+`npx vercel env add`, then `npx vercel deploy --prod`. To redeploy after a push, run
+`npx vercel deploy --prod`, or run `npx vercel git connect` once so every push to `main` deploys
+automatically. To restore the live demo data:
+`DATABASE_URL=… DATABASE_AUTH_TOKEN=… npm run db:reset` with the Turso values.
+
+To set up a fresh copy:
 
 1. Create a Turso database, then copy its URL (`libsql://…`) and an auth token.
 2. Load the schema and demo data into it from your machine:

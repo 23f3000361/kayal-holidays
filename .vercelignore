@@ -1,0 +1,7 @@
+.env*
+!.env.example
+data/*.db*
+node_modules
+.next
+test-results
+playwright-report

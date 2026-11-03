@@ -7,6 +7,7 @@ version history. Consultants answer every enquiry, from
 any channel, in one inbox, where an assistant has already read the message, suggested three
 packages and drafted a reply with prices taken from the price table.
 
+- **Live app:** https://kayal-holidays.vercel.app (password `kayal-demo-2026` for every demo account)
 - **Technical design:** [docs/TDD.pdf](docs/TDD.pdf)
 - **Run and deploy:** [deployment.md](deployment.md)
 

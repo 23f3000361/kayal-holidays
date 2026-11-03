@@ -45,7 +45,7 @@
   <p style="font-size:12.5pt;color:var(--ink2);margin:0">Tour operator website, package CMS and AI-assisted enquiry inbox. Technical Design Document.</p>
   <div class="meta">
     <b>GitHub</b><span><a href="https://github.com/23f3000361/kayal-holidays">https://github.com/23f3000361/kayal-holidays</a></span>
-    <b>Live app</b><span>Not deployed at the time of writing. The app runs locally in about two minutes (see <code>deployment.md</code>); the Vercel + Turso set-up is documented and needs only account credentials.</span>
+    <b>Live app</b><span><a href="https://kayal-holidays.vercel.app">https://kayal-holidays.vercel.app</a> (Vercel, Mumbai region, with a Turso database in Mumbai). Demo logins are in <code>deployment.md</code>; all accounts use the password <code>kayal-demo-2026</code>.</span>
     <b>Brief</b><span>1. Tour operator’s website with custom CMS for packages, blogs and enquiries (Company A, Kochi)</span>
     <b>Core slice</b><span>Public package pages · package CMS with seasonal prices and preview · enquiry form · admin enquiry inbox · AI enquiry extraction and package suggestions</span>
     <b>Date</b><span>3 November 2026</span>
@@ -195,6 +195,7 @@
   <tr><td>Package page</td><td>2.16 s</td><td>547 KB</td></tr>
   <tr><td>Destination (Kerala)</td><td>2.22 s</td><td>547 KB</td></tr>
 </table>
+<p><b>On the live deployment</b> (Vercel and Turso, both in Mumbai, measured from India): with a typical 4G connection (9 Mbps, 60 ms added latency) and the same 4× CPU slowdown, the median LCP is <b>1.2–2.1 s</b> (home 2.10 s, packages 1.81 s, package 1.34 s, destination 1.19 s). With the harsh slow-4G profile added <i>on top of</i> the real network, it is 2.4–3.1 s; that test effectively doubles the latency, so it is a worst case rather than the brief’s “4G”. Pages are served from Vercel’s cache; the proxy’s redirect check adds no measurable time.</p>
 <p class="small">Measuring led to two fixes that together took the package listing from 3.3 s to 2.0 s: the listing became a cached page with in-browser filtering, and card photos are now served at quality 60. A third finding: an entrance fade on the home headline kept the text invisible for over 1.5 s on slow loads, so it was removed. Leaflet maps load only when scrolled into view. Figures are measured with the redirect check in the proxy on every request. They come from a local server, so first-byte time on a CDN will differ, and single runs vary by a few hundred milliseconds.</p>
 
 <h2>7. Security, privacy and quality</h2>
