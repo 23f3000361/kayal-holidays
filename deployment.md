@@ -34,8 +34,8 @@ Useful commands:
 | Command | What it does |
 | --- | --- |
 | `npm run db:reset` | Wipes and reloads the demo data. Timers and dates are relative to now, so run it before a demo. |
-| `npm test` | 84 unit tests (Vitest). |
-| `npm run test:e2e` | 13 Playwright browser runs. Run `npm run build` first; this resets the demo data. First time only: `npx playwright install chromium`. |
+| `npm test` | 107 unit tests (Vitest). |
+| `npm run test:e2e` | 21 Playwright browser runs. Run `npm run build` first; this resets the demo data. First time only: `npx playwright install chromium`. |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript checks. |
 | `node scripts/perf.mjs` | Measures page load (LCP) under throttled slow 4G against a running server. |
 
@@ -97,8 +97,8 @@ data are fictional.
 
 | Role | Email | What to try |
 | --- | --- | --- |
-| Admin | `admin@example.com` | Overview KPIs, all enquiries, reassigning, Activity log. |
-| Content editor | `editor@example.com` | Packages: edit PKG-KL-07 prices, preview, publish or schedule, history. No access to enquiries. |
+| Admin | `admin@example.com` | Overview KPIs, all enquiries, reassigning, **Team** (add staff, roles, deactivate), Activity log. |
+| Content editor | `editor@example.com` | Packages: edit PKG-KL-07 prices, preview, publish or schedule, history. **Journal**: write and publish a post. **Old URLs**: paste a list and check it. No access to enquiries. |
 | Travel consultant | `anjali@example.com` | Inbox: open **Priya Menon** (the brief's sample enquiry), correct a field, send the reply, create a quote. Sees own and unassigned enquiries only. |
 | Travel consultant | `rahul@example.com`, `fatima@example.com` | Same role, different enquiries. |
 | Traveller | `traveller@example.com` | **Your trips**: enquiries, replies and a quote. New travellers can register at `/register`. |
@@ -106,4 +106,5 @@ data are fictional.
 A suggested five-minute path:
 1. As a visitor, open a package, try the price calculator, and send an enquiry.
 2. As Anjali, open Priya Menon's enquiry, then hover the extracted fields to see their evidence.
-3. As the editor, change a price and publish.
+3. As the editor, change a price and publish, then open the Journal and use “Suggest from the text” on a post.
+4. Visit an old URL such as `/kerala-tour-packages.html` and watch it redirect.

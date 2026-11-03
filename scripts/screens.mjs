@@ -91,5 +91,31 @@ const openRow = async (page, text) => {
   await shot(page, "14-inbox-phone");
   await ctx.close();
 }
+{
+  const { ctx, page } = await session(desktop);
+  await page.goto(base + "/blog/first-houseboat-night-alleppey", { waitUntil: "networkidle" });
+  await page.mouse.wheel(0, 1500);
+  await page.waitForTimeout(800);
+  await shot(page, "15-journal-post");
+  await ctx.close();
+}
+{
+  const { ctx, page } = await session(desktop, "editor@example.com");
+  await page.goto(base + "/admin/blog", { waitUntil: "networkidle" });
+  await openRow(page, "Your first houseboat night");
+  await shot(page, "16-journal-editor");
+  await page.goto(base + "/admin/redirects", { waitUntil: "networkidle" });
+  await page.fill("#csv", ["from,to", "/honeymoon.html,/packages/kerala-honeymoon-munnar-thekkady-kumarakom", "/old-trip.html,/packages/no-such-trip"].join("\n"));
+  await page.getByRole("button", { name: "Check list" }).click();
+  await page.getByText("will be skipped").waitFor();
+  await shot(page, "17-old-urls");
+  await ctx.close();
+}
+{
+  const { ctx, page } = await session(desktop, "admin@example.com");
+  await page.goto(base + "/admin/users", { waitUntil: "networkidle" });
+  await shot(page, "18-team");
+  await ctx.close();
+}
 await browser.close();
 console.log("Screens written to", out);
