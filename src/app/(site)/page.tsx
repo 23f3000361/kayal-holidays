@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Search } from "lucide-react";
 import { getLivePackages } from "@/server/packages";
+import { getLivePosts } from "@/server/blog";
+import { PostCard } from "@/components/site/post-card";
 import { PackageCard } from "@/components/site/package-card";
 import { REGION_INFO } from "@/lib/regions";
 import { THEMES } from "@/lib/package-content";
@@ -12,6 +14,7 @@ const MONTHS = ["January", "February", "March", "April", "May", "June", "July", 
 
 export default async function HomePage() {
   const live = await getLivePackages();
+  const posts = (await getLivePosts()).slice(0, 3);
   const featured = ["munnar-thekkady-alleppey-houseboat", "kerala-honeymoon-munnar-thekkady-kumarakom", "kovalam-varkala-beaches-ayurveda"]
     .map((slug) => live.find((p) => p.slug === slug))
     .filter((p): p is NonNullable<typeof p> => !!p);
@@ -108,6 +111,17 @@ export default async function HomePage() {
             {THEMES.filter((t) => live.some((p) => p.content.themes.includes(t))).map((t) => (
               <Link key={t} href={`/packages?theme=${encodeURIComponent(t)}`} className="rounded-full border border-line-strong px-3.5 py-1.5 text-sm capitalize text-ink-2 transition-colors hover:border-accent hover:text-accent">{t}</Link>
             ))}
+          </div>
+        </section>
+      )}
+      {posts.length > 0 && (
+        <section className="container-page pt-24">
+          <div className="flex items-end justify-between gap-4">
+            <h2 className="font-display text-3xl text-ink sm:text-4xl">From the journal</h2>
+            <Link href="/blog" className="hidden items-center gap-1 text-sm text-accent hover:underline sm:flex">All stories <ArrowRight size={14} /></Link>
+          </div>
+          <div className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+            {posts.map((p) => <PostCard key={p.id} slug={p.slug} content={p.content} publishAt={p.publishAt} />)}
           </div>
         </section>
       )}

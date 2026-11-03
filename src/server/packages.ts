@@ -94,6 +94,7 @@ export function revalidatePublic(slug: string, region?: string) {
   revalidatePath("/");
   revalidatePath("/sitemap.xml");
   if (region) revalidatePath(`/destinations/${regionSlug(region)}`);
+  revalidatePath("/blog", "layout"); // posts embed package cards and prices
 }
 
 export async function saveDraft(id: string, input: unknown, user: CurrentUser) {

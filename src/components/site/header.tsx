@@ -11,6 +11,7 @@ const NAV = [
   { href: "/destinations/kerala", label: "Kerala" },
   { href: "/destinations/tamil-nadu", label: "Tamil Nadu" },
   { href: "/destinations/karnataka", label: "Karnataka" },
+  { href: "/blog", label: "Journal" },
 ];
 
 export function Logo({ light }: { light?: boolean }) {

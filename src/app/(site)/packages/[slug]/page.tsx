@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getLiveBySlug, getLivePackages } from "@/server/packages";
+import { getLivePosts } from "@/server/blog";
+import { PostCard } from "@/components/site/post-card";
 import { PackageView } from "@/components/site/package-view";
 import { lowestPrice } from "@/lib/pricing";
 import { regionSlug } from "@/lib/regions";
@@ -31,6 +33,7 @@ export default async function PackagePage({ params }: { params: Promise<{ slug: 
   if (!p) notFound();
   const c = p.content;
   const from = lowestPrice(c);
+  const stories = (await getLivePosts()).filter((x) => x.content.relatedPackages.includes(p.slug)).slice(0, 3);
   const site = process.env.SITE_URL ?? "http://localhost:3000";
   const jsonLd = {
     "@context": "https://schema.org",
@@ -50,6 +53,12 @@ export default async function PackagePage({ params }: { params: Promise<{ slug: 
         <Link href={`/destinations/${regionSlug(c.region)}`} className="hover:text-ink">{c.region}</Link> <span aria-hidden>/</span> <span className="text-ink-2">{c.title}</span>
       </nav>
       <PackageView content={c} slug={p.slug} code={p.code} />
+      {stories.length > 0 && (
+        <section className="container-page pt-16" aria-labelledby="stories">
+          <h2 id="stories" className="font-display text-2xl text-ink">Read before you go</h2>
+          <div className="mt-6 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">{stories.map((s) => <PostCard key={s.id} slug={s.slug} content={s.content} publishAt={s.publishAt} />)}</div>
+        </section>
+      )}
     </>
   );
 }

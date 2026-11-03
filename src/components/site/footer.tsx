@@ -15,6 +15,7 @@ export function SiteFooter() {
           <Link className="block text-muted hover:text-ink" href="/destinations/kerala">Kerala</Link>
           <Link className="block text-muted hover:text-ink" href="/destinations/tamil-nadu">Tamil Nadu</Link>
           <Link className="block text-muted hover:text-ink" href="/destinations/karnataka">Karnataka</Link>
+          <Link className="block text-muted hover:text-ink" href="/blog">Journal</Link>
         </div>
         <div className="space-y-2 text-sm">
           <p className="font-medium text-ink">Talk to us</p>
