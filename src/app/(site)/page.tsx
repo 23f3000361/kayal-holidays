@@ -24,11 +24,11 @@ export default async function HomePage() {
         <Image src="/photos/alleppey-houseboat.jpg" alt="A houseboat on the backwaters of Alleppey, Kerala" fill priority sizes="100vw" className="object-cover opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/30" />
         <div className="container-page relative pb-14 pt-32 sm:pb-20">
-          <p className="text-xs uppercase tracking-[0.2em] text-white/80 animate-fade-up">Kerala & South India, privately</p>
-          <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[1.05] text-white sm:text-7xl animate-fade-up" style={{ animationDelay: "60ms" }}>
+          <p className="text-xs uppercase tracking-[0.2em] text-white/80">Kerala & South India, privately</p>
+          <h1 className="mt-4 max-w-3xl font-display text-5xl leading-[1.05] text-white sm:text-7xl">
             Travel slowly.<br />Come home changed.
           </h1>
-          <form action="/packages" className="mt-10 grid max-w-3xl gap-2 rounded-2xl bg-white/95 p-2 shadow-[var(--shadow-lift)] backdrop-blur sm:grid-cols-[1fr_180px_auto] animate-fade-up" style={{ animationDelay: "120ms" }} role="search">
+          <form action="/packages" className="mt-10 grid max-w-3xl gap-2 rounded-2xl bg-white/95 p-2 shadow-[var(--shadow-lift)] backdrop-blur sm:grid-cols-[1fr_180px_auto]" role="search">
             <label className="flex items-center gap-2 px-3">
               <Search size={18} className="shrink-0 text-faint" />
               <span className="sr-only">Where or what</span>
