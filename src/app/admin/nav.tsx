@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Home, Inbox, NotebookPen, Package, Users } from "lucide-react";
+import { Activity, Home, Inbox, NotebookPen, Package, Signpost, Users } from "lucide-react";
 import { cx } from "@/components/ui";
 
-const ICONS = { home: Home, inbox: Inbox, package: Package, journal: NotebookPen, team: Users, activity: Activity };
+const ICONS = { home: Home, inbox: Inbox, package: Package, journal: NotebookPen, redirects: Signpost, team: Users, activity: Activity };
 
 type Item = { href: string; label: string; icon: keyof typeof ICONS; badge?: number; alert?: boolean; exact?: boolean };
 
