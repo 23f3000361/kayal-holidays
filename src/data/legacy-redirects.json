@@ -1,0 +1,20 @@
+[
+  { "from": "/kerala-tour-packages.html", "to": "/destinations/kerala" },
+  { "from": "/tamilnadu-tour-packages.html", "to": "/destinations/tamil-nadu" },
+  { "from": "/karnataka-tour-packages.html", "to": "/destinations/karnataka" },
+  { "from": "/all-packages.html", "to": "/packages" },
+  { "from": "/tour-packages", "to": "/packages" },
+  { "from": "/contact-us.html", "to": "/enquire" },
+  { "from": "/enquiry.php", "to": "/enquire" },
+  { "from": "/packages/munnar-thekkady-alleppey-6-days.html", "to": "/packages/munnar-thekkady-alleppey-houseboat" },
+  { "from": "/packages/kerala-houseboat-tour.html", "to": "/packages/munnar-thekkady-alleppey-houseboat" },
+  { "from": "/packages/kochi-alleppey-4-days.html", "to": "/packages/kochi-alleppey-backwater-escape" },
+  { "from": "/packages/kerala-honeymoon-package.html", "to": "/packages/kerala-honeymoon-munnar-thekkady-kumarakom" },
+  { "from": "/packages/kovalam-varkala-ayurveda.html", "to": "/packages/kovalam-varkala-beaches-ayurveda" },
+  { "from": "/packages/grand-kerala-9-days.html", "to": "/packages/grand-kerala-hills-backwaters-beach" },
+  { "from": "/packages/wayanad-tour.html", "to": "/packages/wayanad-wilderness" },
+  { "from": "/packages/coorg-mysore-tour.html", "to": "/packages/coorg-mysore" },
+  { "from": "/packages/ooty-kodaikanal-tour.html", "to": "/packages/ooty-kodaikanal-hills" },
+  { "from": "/packages/pondicherry-mahabalipuram.html", "to": "/packages/pondicherry-mahabalipuram" },
+  { "from": "/privacy-policy.html", "to": "/privacy" }
+]
