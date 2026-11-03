@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kayal Holidays: tour operator website, package CMS and enquiry inbox
 
-## Getting Started
+A working build for Company A, a Kochi tour operator selling Kerala and South India holidays
+(brief 1). Travellers browse server-rendered package pages and send enquiries. Content staff edit
+packages with seasonal prices, preview and version history. Consultants answer every enquiry, from
+any channel, in one inbox, where an assistant has already read the message, suggested three
+packages and drafted a reply with prices taken from the price table.
 
-First, run the development server:
+- **Technical design:** [docs/TDD.pdf](docs/TDD.pdf)
+- **Run and deploy:** [deployment.md](deployment.md)
+
+![Enquiry workspace](docs/screens/07-enquiry.png)
+
+## What works
+
+| Area | Highlights |
+| --- | --- |
+| Public site | Home, search with filters, destination pages, package pages with day-by-day itinerary, hotels, seasonal price table, live price calculator, route map, one Enquire button. Server-rendered, cached, sitemap, robots, JSON-LD, 308 redirects from old URLs. |
+| Package CMS | Create, edit, duplicate, seasonal prices with gap and overlap checks, photos (library or upload), preview, signed share link, publish now or schedule, version history with diffs, restore, unpublish. |
+| Enquiries | Web form with consent, simulated WhatsApp, email and chat webhook, logging of phone calls. Instant acknowledgement, auto-assignment, one-working-hour reply timer, notes, status, quotes as link and PDF. |
+| AI assist | Extracts travellers, dates, nights, places, budget and must-haves with evidence and confidence; ranks packages with a visible score; drafts a reply. Optional LLM second opinion. Nothing is sent without a person. |
+| Roles | Admin, content editor, travel consultant, traveller. Activity log. |
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # then set APP_SECRET (any 32+ character string)
+npm run db:setup             # creates data/kayal.db and loads demo data
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Demo accounts (password `kayal-demo-2026`): `admin@example.com`, `editor@example.com`,
+`anjali@example.com` (consultant), `traveller@example.com`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tests
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test            # 84 unit tests: pricing, extraction, suggestions, SLA, versions, search, redirects
+npm run build && npm run test:e2e   # 13 Playwright runs, desktop and phone (resets demo data)
+node scripts/perf.mjs               # LCP on throttled slow 4G, needs a running production server
+```
 
-## Learn More
+## Stack
 
-To learn more about Next.js, take a look at the following resources:
+Next.js 16 (App Router, server actions), React 19, TypeScript, Tailwind CSS 4, Drizzle ORM on
+libSQL (SQLite file locally, Turso in production), Zod, Vitest, Playwright.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Photographs are from Wikimedia Commons under CC licences; see `/credits`.

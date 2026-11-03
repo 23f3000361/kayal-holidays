@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kayal Holidays: Technical Design Document</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  :root { --ink:#1d211f; --ink2:#3d433f; --muted:#6b716c; --line:#e6e1d8; --sand:#f2eee6; --accent:#1f4d3f; --gold:#a8742a; --warn:#a15c07; }
+  * { box-sizing: border-box; }
+  body { font: 10.2pt/1.5 "Segoe UI", Inter, system-ui, sans-serif; color: var(--ink); margin: 0; }
+  h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; font-weight: 500; color: var(--ink); line-height: 1.2; }
+  h1 { font-size: 26pt; margin: 0 0 4pt; }
+  h2 { font-size: 16pt; margin: 22pt 0 6pt; padding-top: 4pt; border-top: 1px solid var(--line); break-after: avoid; }
+  h3 { font-size: 12pt; margin: 14pt 0 4pt; break-after: avoid; }
+  p { margin: 0 0 6pt; }
+  ul, ol { margin: 0 0 6pt; padding-left: 16pt; }
+  li { margin: 1.5pt 0; }
+  a { color: var(--accent); }
+  code { font: 9pt Consolas, monospace; background: var(--sand); padding: 0 3px; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 4pt 0 10pt; font-size: 9pt; break-inside: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 4pt 6pt; border-bottom: 1px solid var(--line); }
+  th { background: var(--sand); font-weight: 600; color: var(--ink2); }
+  tr { break-inside: avoid; }
+  .cover { border-bottom: 3px solid var(--accent); padding-bottom: 10pt; margin-bottom: 10pt; }
+  .meta { display: grid; grid-template-columns: 110px 1fr; gap: 2pt 10pt; font-size: 9.5pt; margin-top: 8pt; }
+  .meta b { color: var(--muted); font-weight: 600; }
+  .callout { background: var(--sand); border-left: 3px solid var(--gold); padding: 6pt 9pt; margin: 6pt 0 10pt; font-size: 9.5pt; }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 600; color: var(--accent); background: #e5eee9; border-radius: 9px; padding: 0 6px; }
+  .fig { margin: 8pt 0 12pt; break-inside: avoid; }
+  .fig img { width: 100%; border: 1px solid var(--line); border-radius: 6px; display: block; }
+  .fig figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3pt; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .phone { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10pt; align-items: start; }
+  .phone img { max-height: 120mm; object-fit: cover; object-position: top; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  svg text { font-family: "Segoe UI", Inter, sans-serif; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <h1>Kayal Holidays</h1>
+  <p style="font-size:12.5pt;color:var(--ink2);margin:0">Tour operator website, package CMS and AI-assisted enquiry inbox. Technical Design Document.</p>
+  <div class="meta">
+    <b>GitHub</b><span><a href="https://github.com/23f3000361/kayal-holidays">https://github.com/23f3000361/kayal-holidays</a></span>
+    <b>Live app</b><span>Not deployed at the time of writing. The app runs locally in about two minutes (see <code>deployment.md</code>); the Vercel + Turso set-up is documented and needs only account credentials.</span>
+    <b>Brief</b><span>1. Tour operator’s website with custom CMS for packages, blogs and enquiries (Company A, Kochi)</span>
+    <b>Core slice</b><span>Public package pages · package CMS with seasonal prices and preview · enquiry form · admin enquiry inbox · AI enquiry extraction and package suggestions</span>
+    <b>Date</b><span>3 November 2026</span>
+  </div>
+</section>
+
+<h2>1. Summary</h2>
+<p>The client loses an estimated 48 bookings a month (₹4.37 lakh in margin) because a quarter of web enquiries wait more than 12 hours for a reply, and pays ₹3,000 and 3 days for every package or price change. This build attacks both:</p>
+<ul>
+  <li><b>Self-service CMS.</b> An editor changes a seasonal price, previews it and publishes it, or schedules it, in about two minutes. Every version is kept and can be restored.</li>
+  <li><b>One inbox with a one-hour clock.</b> Web, WhatsApp, email, chat and phone enquiries land in one place, get an instant acknowledgement, go to the consultant with the lightest load, and show a live countdown to the one-working-hour target.</li>
+  <li><b>An assistant that does the slow part.</b> It reads the message, extracts party, dates, nights, places, budget and must-haves, highlights the words each value came from, ranks three packages with a visible score, and drafts a reply priced from the price table. A consultant checks it and presses Send. Nothing is sent or published automatically.</li>
+</ul>
+<p>Beyond the core slice it also ships: quotes as a branded web link and PDF, a traveller account, signed preview links for the MD, an activity log, legacy URL redirects, sitemap and structured data, and a measured page load under 2.5 s on throttled 4G.</p>
+<div class="callout"><b>Honest scope note.</b> The blog CMS from the Must-have list was cut so the core slice could be finished properly (section 9). Messages and payments are simulated, as the brief allows. Every assumption is labelled <span class="tag">A1</span>…<span class="tag">A18</span> and listed in section 8.</div>
+
+<h2>2. Architecture and why</h2>
+<svg viewBox="0 0 760 250" width="100%" role="img" aria-label="Architecture diagram">
+  <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#6b716c"/></marker></defs>
+  <g font-size="11">
+    <rect x="10" y="20" width="150" height="56" rx="8" fill="#f2eee6" stroke="#d5cfc3"/><text x="85" y="44" text-anchor="middle" font-weight="600">Traveller (phone)</text><text x="85" y="62" text-anchor="middle" fill="#6b716c">public site, enquiry form</text>
+    <rect x="10" y="96" width="150" height="56" rx="8" fill="#f2eee6" stroke="#d5cfc3"/><text x="85" y="120" text-anchor="middle" font-weight="600">Staff</text><text x="85" y="138" text-anchor="middle" fill="#6b716c">admin · editor · consultant</text>
+    <rect x="10" y="172" width="150" height="56" rx="8" fill="#f2eee6" stroke="#d5cfc3"/><text x="85" y="196" text-anchor="middle" font-weight="600">WhatsApp / email</text><text x="85" y="214" text-anchor="middle" fill="#6b716c">simulated webhook</text>
+    <rect x="210" y="14" width="330" height="222" rx="10" fill="#fff" stroke="#1f4d3f"/>
+    <text x="375" y="34" text-anchor="middle" font-weight="700" fill="#1f4d3f">Next.js 16 app (one deployable)</text>
+    <rect x="226" y="46" width="146" height="54" rx="6" fill="#e5eee9"/><text x="299" y="68" text-anchor="middle" font-weight="600">Public pages</text><text x="299" y="85" text-anchor="middle" fill="#3d433f">static + ISR, revalidate</text>
+    <rect x="382" y="46" width="146" height="54" rx="6" fill="#e5eee9"/><text x="455" y="68" text-anchor="middle" font-weight="600">Admin pages</text><text x="455" y="85" text-anchor="middle" fill="#3d433f">server-rendered per user</text>
+    <rect x="226" y="110" width="302" height="40" rx="6" fill="#f2eee6"/><text x="377" y="134" text-anchor="middle">Server actions + route handlers: auth check, Zod validation</text>
+    <rect x="226" y="160" width="146" height="64" rx="6" fill="#fbf1e2"/><text x="299" y="182" text-anchor="middle" font-weight="600">Domain logic (pure)</text><text x="299" y="198" text-anchor="middle" fill="#3d433f">pricing · seasons · SLA</text><text x="299" y="213" text-anchor="middle" fill="#3d433f">versions · search</text>
+    <rect x="382" y="160" width="146" height="64" rx="6" fill="#fbf1e2"/><text x="455" y="182" text-anchor="middle" font-weight="600">AI assist (pure)</text><text x="455" y="198" text-anchor="middle" fill="#3d433f">extract · suggest · draft</text><text x="455" y="213" text-anchor="middle" fill="#3d433f">merge LLM opinion</text>
+    <rect x="590" y="40" width="160" height="66" rx="8" fill="#f2eee6" stroke="#d5cfc3"/><text x="670" y="64" text-anchor="middle" font-weight="600">libSQL / SQLite</text><text x="670" y="82" text-anchor="middle" fill="#6b716c">file locally · Turso hosted</text><text x="670" y="97" text-anchor="middle" fill="#6b716c">via Drizzle ORM</text>
+    <rect x="590" y="160" width="160" height="64" rx="8" fill="#fff" stroke="#d5cfc3" stroke-dasharray="4 3"/><text x="670" y="184" text-anchor="middle" font-weight="600">LLM endpoint</text><text x="670" y="200" text-anchor="middle" fill="#6b716c">optional, any OpenAI-</text><text x="670" y="214" text-anchor="middle" fill="#6b716c">compatible API</text>
+  </g>
+  <g stroke="#6b716c" stroke-width="1.3" fill="none" marker-end="url(#ar)">
+    <path d="M160 48 H222"/><path d="M160 124 H222"/><path d="M160 200 H210 V140"/>
+    <path d="M540 120 H586 V96"/><path d="M528 192 H586"/>
+  </g>
+</svg>
+<table>
+  <tr><th style="width:24%">Decision</th><th>Why</th></tr>
+  <tr><td>Next.js 16 App Router, one deployable</td><td>The brief needs server-rendered, fast, crawlable pages <i>and</i> a secure admin. One TypeScript codebase does both; server components keep data access on the server, and server actions give typed mutations without a separate API layer. One deployable keeps hosting cheap for a 48-person company.</td></tr>
+  <tr><td>Static generation + incremental revalidation for public pages</td><td>Package and destination pages are generated as HTML and cached at the edge. Publishing calls <code>revalidatePath</code>, so a price change is live in seconds; a 60-second revalidation window lets <i>scheduled</i> versions go live with no cron job. Measured median LCP is 1.9–2.1 s on throttled slow 4G (section 6).</td></tr>
+  <tr><td>SQLite dialect via libSQL + Drizzle</td><td>The reviewer runs it with zero services (a local file); production uses Turso with the same SQL. Drizzle gives typed queries and plain SQL migrations. The data set (60 packages, 2,400 enquiries a month) is small; Postgres would add operations cost without benefit at this size.</td></tr>
+  <tr><td>Own session auth</td><td>Four roles and simple email + password do not justify a third-party identity provider. Sessions are random 256-bit tokens; only their SHA-256 is stored; cookies are httpOnly, SameSite=Lax, Secure in production; passwords use bcrypt.</td></tr>
+  <tr><td>Pure domain modules</td><td>Pricing, seasons, the reply clock, versioning, search and the AI are plain functions with no database or framework imports, so they are unit-tested directly (84 tests) and reused on server and client. The price shown in the browser calculator, in the reply draft, in the quote and in the PDF all come from one <code>priceParty()</code>.</td></tr>
+  <tr><td>Rules engine first, LLM optional</td><td>See section 4. It runs free, offline and deterministically; personal data never leaves the system unless the client opts in to an LLM.</td></tr>
+</table>
+
+<h2>3. Data model</h2>
+<table>
+  <tr><th style="width:20%">Table</th><th>Key fields</th><th style="width:34%">Notes</th></tr>
+  <tr><td><b>users</b></td><td>email, name, password_hash, role (admin | editor | consultant | traveller), active, last_assigned_at</td><td>Staff accounts are seeded or created by an admin; public sign-up always creates travellers.</td></tr>
+  <tr><td><b>sessions</b></td><td>id = sha256(token), user_id, expires_at</td><td>Raw token only in the cookie.</td></tr>
+  <tr><td><b>packages</b></td><td>code (PKG-KL-07), slug, archived</td><td>Stable identity; the slug is locked after first publish so URLs never break.</td></tr>
+  <tr><td><b>package_versions</b></td><td>package_id, kind (draft | release), version_no, content JSON, visibility (public | hidden), publish_at, note, author_id</td><td>One editable <i>draft</i> per package; every publish adds an immutable <i>release</i>. Content is validated by a Zod schema.</td></tr>
+  <tr><td><b>media</b></td><td>bytes, mime, width, height</td><td>Uploads, resized to WebP in the browser, served with year-long cache headers.</td></tr>
+  <tr><td><b>enquiries</b></td><td>ref (ENQ-10015), channel, package_id, traveller_id, contact, message, form fields, consent_contact, consent_whatsapp, status, assigned_to_id, extraction JSON, confirmed JSON, first_reply_at, due_at</td><td><code>extraction</code> keeps what the AI read; <code>confirmed</code> keeps consultant corrections on top, so both stay auditable.</td></tr>
+  <tr><td><b>enquiry_events</b></td><td>type (received, ack, ai, note, reply, status, assign, quote, correction), body, actor</td><td>The enquiry timeline.</td></tr>
+  <tr><td><b>messages</b></td><td>channel (email | whatsapp), to, subject, body, kind (ack | reply)</td><td>The simulated outbox; nothing leaves the system.</td></tr>
+  <tr><td><b>quotes</b></td><td>ref, token, package + <i>version</i> id, travel date, party, price JSON, valid_until</td><td>Pinned to the exact package version quoted, so later edits never change a sent quote.</td></tr>
+  <tr><td><b>audit_log</b>, <b>counters</b></td><td>actor, action, summary · name, value</td><td>Activity log; atomic reference numbers.</td></tr>
+</table>
+<h3>Versioning, the hard part</h3>
+<p>The live version is computed, not stored: <i>among releases whose publish time has passed, the highest version number wins; if it is hidden, the package is offline.</i> Consequences, all unit-tested:</p>
+<ul>
+  <li><b>Scheduling needs no job runner.</b> A release scheduled for 1 October simply becomes the answer on 1 October, and the 60-second page revalidation picks it up.</li>
+  <li><b>Unpublish is a release</b> (visibility hidden), so the history shows who took a package offline and when.</li>
+  <li><b>A newer publish always wins.</b> Testing exposed a trap: if v3 is scheduled for March and an editor publishes an urgent v4 today, a "latest publish time wins" rule would let v3 silently undo v4 in March. The rule above prevents that, and publishing openly cancels the superseded schedule. The publish dialog warns first and shows a field-by-field diff against the live version.</li>
+  <li><b>Preview</b> renders the draft with the very component the live page uses, so what you preview is what goes live. A signed, 7-day link lets the MD review on a phone without an account.</li>
+</ul>
+
+<h2>4. How the AI part works</h2>
+<p>The brief asks the AI to extract dates, travellers, destination and budget, suggest three packages and draft a reply, with corrections beside the original, nothing sent without a person, and prices never from the AI. The pipeline:</p>
+<ol>
+  <li><b>Extraction (rules engine, always on).</b> Pattern rules and a gazetteer of the client’s destinations (including spellings travellers really type, such as Alappuzha, Cochin or Kodai) read: adults and children (and their ages), dates (ranges, months, “next month”, holidays, Indian day/month order), nights (“5-6 nights”, “6D/5N”, “a week”), places and states, budget (lakh, k, ₹, $, €, £; total versus per person; around versus up to), must-haves versus nice-to-haves (“houseboat a must”), trip type and hotel class. Each field carries a <b>confidence</b> and the <b>character spans</b> of its evidence. Unclear cases are scored low instead of guessed: a group size gives adults at 60% (“assumed all adults”); “budget 80k” without total or per person gives 65%; “05/01” is read as 5 January at 55%; non-English text raises a warning.</li>
+  <li><b>LLM second opinion (optional).</b> If <code>LLM_*</code> variables are set, any OpenAI-compatible model is asked for the same fields as JSON, validated by Zod, and merged field by field: if they agree, confidence rises; if they disagree, the field is flagged with both readings; a value found only by the model is kept at reduced confidence, and lower still if it cannot be found in the message text, which guards against invented details. Timeouts and errors fall back silently to the rules result.</li>
+  <li><b>Suggestions.</b> Only <i>live</i> packages are ranked (drafts like PKG-SI-12 never appear). The score is a visible sum: destination 35, must-haves or interests 25, length 20, budget 20 (priced for the actual party and date), trip style 5. A missing must-have halves the score. Each suggestion shows “why this score”.</li>
+  <li><b>Draft reply.</b> Plain-text template filled from the fields and the price table. It asks only about what is missing or uncertain (child ages, exact dates). Every rupee figure comes from <code>priceParty()</code>; a unit test checks that every ₹ amount in a draft matches a price-table calculation.</li>
+</ol>
+<h3>When it is wrong or unsure</h3>
+<ul>
+  <li>The original message sits beside the fields with evidence highlighted; hovering a field lights up its words. Fields below 70% confidence, and required fields not found, are marked amber.</li>
+  <li>Consultants correct fields and confirm; suggestions and the draft re-run on the corrected values; corrections are stored separately and logged on the timeline.</li>
+  <li>Nothing is sent without a person: Send needs a second confirmation. WhatsApp is disabled unless consent is on record.</li>
+  <li>Structured values the traveller typed in the form (date, adults, children) outrank anything inferred.</li>
+  <li>Quotes can only be created for live packages and dates that have a price; otherwise the consultant is told to choose another date or package.</li>
+</ul>
+<p><b>Sample from the brief.</b> “2 adults and 1 kid, Kerala 5-6 nights in December, budget around 1.2 lakh total, houseboat a must” extracts every field correctly (budget at 90% confidence), ranks PKG-KL-07 first (score 95), and prices it for 2 adults + 1 child in peak season at ₹81,250 + 5% GST ₹4,063 = <b>₹85,313</b>, within the budget. The draft asks the child’s age and exact dates. All of this is asserted in tests.</p>
+<div class="fig"><img src="screens/07-enquiry.png" alt=""><figcaption>Enquiry workspace for the brief’s sample enquiry: evidence highlighted in the original, editable fields with confidence, ranked packages and a priced draft.</figcaption></div>
+<div class="fig"><img src="screens/09-low-confidence.png" alt=""><figcaption>Uncertainty shown, not hidden: a group of 18 is read as 18 adults at 60% and flagged amber; the foreign-currency budget notes the assumed exchange rate.</figcaption></div>
+
+<h2 class="pb">5. Main flows</h2>
+<table>
+  <tr><th style="width:22%">Flow</th><th>Steps</th></tr>
+  <tr><td>Traveller enquires</td><td>Package page → Enquire (the one primary button; sticky on phones) → form with consent and optional WhatsApp consent → server validates (Zod, honeypot, 5 per 10 min per IP) → enquiry stored, extraction run, consultant assigned, acknowledgement sent from a fixed template, reply due time set → thank-you page with reference and expected reply time.</td></tr>
+  <tr><td>Other channels</td><td>Staff “Log an enquiry” for calls and pasted chats; <code>/api/inbound/whatsapp|email|chat</code> webhook (shared secret) for simulated providers. Same pipeline as the web.</td></tr>
+  <tr><td>Consultant replies</td><td>Inbox (Open / Mine / Unassigned / Closed, search, channel filter, live timers) → enquiry → check amber fields → confirm → pick from suggestions → edit draft → Send (email, or WhatsApp if consented) → first-reply time recorded, status Replied. Optional quote: package + date + party → priced from the table → link + PDF.</td></tr>
+  <tr><td>Editor changes a price</td><td>Packages → package → Prices (season cards with gap and overlap checks) → Save draft (Ctrl+S) → Preview → Publish… (diff against live, warnings, now or scheduled, change note) → public page revalidated.</td></tr>
+  <tr><td>New package</td><td>New package (code, title, region) → editor checklist lists what is missing (summary, photos, prices, itinerary length…) → publish when the list is clear. Or Duplicate an existing package.</td></tr>
+  <tr><td>Traveller account</td><td>Register → enquiries sent while signed in appear in “Your trips” with replies and quotes. Enquiries are <i>not</i> linked by email address, so nobody can see another person’s enquiries by registering their email <span class="tag">A16</span>.</td></tr>
+</table>
+<p><b>Roles and access.</b> One permission table (<code>lib/permissions.ts</code>) is checked on the server in every page, action and route. Admins see everything. Editors manage packages but cannot see enquiries (personal data is minimised). Consultants see their own enquiries and the unassigned pool, and can take an unassigned one; only admins reassign. Travellers see only their own trips. The proxy redirect for signed-out users is a convenience; it is not the security boundary.</p>
+
+<h2>6. UI and design decisions</h2>
+<p>The client asked for restraint: white space, a restrained palette, clear type, and nothing without a purpose. Travel is sold by feeling. The system is:</p>
+<ul>
+  <li><b>Palette:</b> warm paper (#FAF8F4), ink (#1D211F) and <b>one</b> backwater green (#1F4D3F) reserved for actions, so the Enquire button is always the obvious next step. Gold appears only as a small accent. Amber and red mean “check this” and “late”, and nothing else.</li>
+  <li><b>Type:</b> Fraunces (serif) for headings on the public site gives quiet editorial warmth; Inter for everything else. The admin uses Inter only: calm and dense.</li>
+  <li><b>Photography first:</b> full-bleed covers with a gentle gradient for legible titles; a horizontal swipe gallery on phones.</li>
+  <li><b>Prices always state their basis:</b> “per person, twin sharing, plus 5% GST” sits next to every price, and the season table shows uncovered dates as “On request” instead of hiding them.</li>
+  <li><b>Admin for non-technical editors:</b> plain-language labels (“Day by day”, “What changed (for the history)”), a live “Ready to publish” checklist, one Save and one Publish, and no jargon such as “slug”.</li>
+  <li><b>States:</b> skeleton loading screens, empty states with a next step, inline validation messages, friendly error and 404 pages, and disabled buttons with spinners while saving.</li>
+  <li><b>Phones:</b> every screen was checked at 390 px; the public package page has a sticky price-and-Enquire bar; the admin navigation becomes a horizontal tab strip.</li>
+  <li><b>Accessibility:</b> semantic headings and landmarks, a skip link, labelled controls (the e2e tests select by accessible name), visible focus, reduced-motion support, and live regions for prices and timers.</li>
+</ul>
+<div class="two">
+  <div class="fig"><img src="screens/01-home.png" alt=""><figcaption>Home: one image, one sentence, one search.</figcaption></div>
+  <div class="fig"><img src="screens/02-package.png" alt=""><figcaption>Package page: summary, facts, and a sticky price card with a live calculator.</figcaption></div>
+</div>
+<div class="phone">
+  <div class="fig"><img src="screens/03-package-phone.png" alt=""><figcaption>Package on a phone, sticky Enquire bar.</figcaption></div>
+  <div class="fig"><img src="screens/04-enquiry-phone.png" alt=""><figcaption>Enquiry form on a phone.</figcaption></div>
+  <div class="fig"><img src="screens/14-inbox-phone.png" alt=""><figcaption>Consultant inbox on a phone.</figcaption></div>
+</div>
+<div class="two">
+  <div class="fig"><img src="screens/05-overview.png" alt=""><figcaption>Overview: the client’s success metric (answered within one working hour, target 90%) is the first number.</figcaption></div>
+  <div class="fig"><img src="screens/06-inbox.png" alt=""><figcaption>Inbox: channels, extracted chips (amber = uncertain), owner and live reply timer.</figcaption></div>
+  <div class="fig"><img src="screens/11-editor-prices.png" alt=""><figcaption>Editor: seasonal prices with automatic gap and overlap checks.</figcaption></div>
+  <div class="fig"><img src="screens/12-publish-dialog.png" alt=""><figcaption>Publish dialog: diff against live, warnings, and now or scheduled.</figcaption></div>
+</div>
+<h3>Performance, measured</h3>
+<p><code>scripts/perf.mjs</code> loads pages in Chromium as a Pixel 7 with Lighthouse’s “slow 4G” throttling (150 ms RTT, 1.6 Mbps) and a 4× CPU slowdown; median of three runs, production build:</p>
+<table class="num">
+  <tr><th>Page</th><th>Median LCP</th><th>Transferred</th></tr>
+  <tr><td>Home</td><td>1.93 s</td><td>536 KB</td></tr>
+  <tr><td>All packages</td><td>1.96 s</td><td>625 KB</td></tr>
+  <tr><td>Package page</td><td>1.88 s</td><td>545 KB</td></tr>
+  <tr><td>Destination (Kerala)</td><td>2.12 s</td><td>546 KB</td></tr>
+</table>
+<p class="small">Measuring led to two fixes that together took the package listing from 3.3 s to 2.0 s: the listing became a cached page with in-browser filtering, and card photos are now served at quality 60. A third finding: an entrance fade on the home headline kept the text invisible for over 1.5 s on slow loads, so it was removed. Leaflet maps load only when scrolled into view. The figures are from a local server; on a CDN, the first-byte time will differ.</p>
+
+<h2>7. Security, privacy and quality</h2>
+<ul>
+  <li><b>Secrets:</b> none in the repository; <code>.env.example</code> lists names only; production refuses to start preview signing without <code>APP_SECRET</code>.</li>
+  <li><b>Input validation:</b> Zod on every action and route; IDs checked as UUIDs; uploads checked by magic number and size; the inbound webhook uses a timing-safe secret comparison.</li>
+  <li><b>Access control:</b> server-side permission checks plus per-record visibility for enquiries (tested end to end: an editor is refused the inbox; a consultant cannot open a colleague’s enquiry).</li>
+  <li><b>Abuse:</b> honeypot and per-IP limit on the enquiry form; login lock-out after 5 failures per email + IP for 15 minutes; a dummy password check for unknown emails, so response time does not reveal which accounts exist.</li>
+  <li><b>Headers:</b> nosniff, frame options, referrer policy, permissions policy; admin, account, preview and quote pages are noindex.</li>
+  <li><b>DPDP Act 2023:</b> purpose-specific consent on the form; separate, recorded WhatsApp consent enforced at send time; editors cannot see personal data; a plain privacy notice; fictional demo data only (example.com addresses).</li>
+  <li><b>Tests:</b> 84 unit tests (pricing and GST rounding, season wrap-around and gaps, extraction on 24 phrasings, LLM merge, suggestions, draft price integrity, working-hours SLA, assignment, versioning, search, redirects) and 13 Playwright runs on desktop and phone (search, prices, draft 404, redirects, validation, the sample enquiry end to end, quote PDF, access control, publish updating the live page, publish blocked by a checklist error).</li>
+</ul>
+
+<h2>8. Assumptions (labelled)</h2>
+<table>
+  <tr><th style="width:7%">#</th><th>Assumption</th></tr>
+  <tr><td>A1</td><td>Brand name “Kayal Holidays” (kayal: backwater in Malayalam) stands in for Company A.</td></tr>
+  <tr><td>A2</td><td>PKG-KL-07 and PKG-SI-12 are as given (including PKG-SI-12 as a draft and KL-07 having no April–May price, shown as “On request”). Their itineraries, hotels and inclusions, and the other 8 packages, are invented sample data.</td></tr>
+  <tr><td>A3</td><td>GST on tour packages is 5% of the package price, editable per package; confirm with the client’s accountant.</td></tr>
+  <tr><td>A4</td><td>Children 5–11 sharing their parents’ room pay 50% of the adult price (editable per package); under-5s are free. No single supplement in this build.</td></tr>
+  <tr><td>A5</td><td>The season is decided by the trip’s start date.</td></tr>
+  <tr><td>A6</td><td>Working hours are Monday–Saturday, 09:00–19:00 IST, with no holiday calendar; the one-hour target counts working minutes only.</td></tr>
+  <tr><td>A7</td><td>Auto-assignment goes to the active consultant with the fewest open enquiries; ties go to whoever was assigned least recently.</td></tr>
+  <tr><td>A8</td><td>Foreign budgets convert at fixed assumed rates (USD 84, EUR 91, GBP 107), and the UI says so.</td></tr>
+  <tr><td>A9</td><td>Without a date, suggestions price on the 15th of the requested month; without a party, 2 adults.</td></tr>
+  <tr><td>A10</td><td>A WhatsApp message to the business counts as consent to reply on WhatsApp in that conversation; web and phone enquiries need explicit consent.</td></tr>
+  <tr><td>A11</td><td>The 140 old URLs are not in the brief; 18 representative mappings show the mechanism, and a test rejects chains, loops and dead targets. The real list would come from a crawl of the old site.</td></tr>
+  <tr><td>A12</td><td>Quotes are valid for 14 days.</td></tr>
+  <tr><td>A13</td><td>Enquiries that do not lead to a booking are deleted after 12 months (stated in the privacy notice; deletion job not built).</td></tr>
+  <tr><td>A14</td><td>Package codes follow PKG-&lt;state&gt;-&lt;nn&gt;; the web address is set from the title and locked after first publish.</td></tr>
+  <tr><td>A15</td><td>Consultants see their own and unassigned enquiries; admins see all; editors see none.</td></tr>
+  <tr><td>A16</td><td>Traveller accounts show only enquiries sent while signed in (no email verification in this build).</td></tr>
+  <tr><td>A17</td><td>Photos are openly licensed Wikimedia Commons images, credited at <code>/credits</code>; the client would replace them with its own.</td></tr>
+  <tr><td>A18</td><td>Email, WhatsApp and payments are simulated, as the brief allows: messages go to an outbox shown in the app.</td></tr>
+</table>
+
+<h2>9. What I cut, and what I would do next</h2>
+<h3>Cut, deliberately</h3>
+<ul>
+  <li><b>Blog CMS</b> (rich editor, categories, related packages). It is optional depth for this slice; the package CMS patterns (draft, release, preview, history) would carry over directly.</li>
+  <li><b>Real delivery</b> of email and WhatsApp, and payments (simulated by design).</li>
+  <li><b>Hindi and German.</b> Text is English-only and not yet in message files; extracting strings is the first step.</li>
+  <li><b>User management screens.</b> Staff are seeded; the permission model is ready for an admin UI.</li>
+</ul>
+<h3>Known limits</h3>
+<ul>
+  <li>Scheduled releases go live within about 60 seconds of their time (page revalidation window), not to the second.</li>
+  <li>The login and enquiry rate limits are in memory per server; several instances would need a shared store.</li>
+  <li>One draft per package: two editors working on the same package at once would overwrite each other (last save wins). The next step is an edit lock or a version check on save.</li>
+  <li>Photos live in the database; at scale they belong in object storage behind a CDN.</li>
+  <li>When the admin area streams a not-found page, the HTTP status is 200 (the content is still withheld); a dedicated access-denied route would return 403/404.</li>
+</ul>
+<h3>Next, in priority order</h3>
+<ol>
+  <li>Connect a WhatsApp Business provider and transactional email to the existing webhook and outbox; add delivery status.</li>
+  <li>Measure the AI on real traffic: log consultant corrections per field to get accuracy figures, and tune the rules (or enable the LLM) where corrections cluster.</li>
+  <li>Blog CMS with related packages, then Hindi and German routes with hreflang.</li>
+  <li>Import the real 140 redirects; connect Search Console; monitor Core Web Vitals in the field.</li>
+  <li>Edit locking, a staff management screen, a holiday calendar for the reply clock, and a retention job for DPDP.</li>
+</ol>
+
+<p class="small" style="margin-top:16pt">Repository structure: <code>src/lib</code> pure domain and AI logic with tests · <code>src/server</code> data access and services · <code>src/app</code> routes, pages and server actions · <code>scripts</code> seed, photos, perf and screenshots · <code>e2e</code> Playwright tests · <code>drizzle</code> SQL migrations.</p>
+</body>
+</html>
