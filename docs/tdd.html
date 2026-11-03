@@ -117,6 +117,7 @@
   <li><b>Scheduling needs no job runner.</b> A release scheduled for 1 October simply becomes the answer on 1 October, and the 60-second page revalidation picks it up.</li>
   <li><b>Unpublish is a release</b> (visibility hidden), so the history shows who took a package offline and when.</li>
   <li><b>A newer publish always wins.</b> Testing exposed a trap: if v3 is scheduled for March and an editor publishes an urgent v4 today, a "latest publish time wins" rule would let v3 silently undo v4 in March. The rule above prevents that, and publishing openly cancels the superseded schedule. The publish dialog warns first and shows a field-by-field diff against the live version.</li>
+  <li><b>Two editors, one draft.</b> Each editor keeps a fingerprint of the draft it loaded. If someone else saved in between, the save is refused and a banner says who saved and when; the editor’s own changes stay on screen until they choose to reload. Nobody’s work is silently overwritten (tested end to end with two browsers).</li>
   <li><b>Preview</b> renders the draft with the very component the live page uses, so what you preview is what goes live. A signed, 7-day link lets the MD review on a phone without an account.</li>
 </ul>
 
@@ -207,7 +208,7 @@
   <li><b>Abuse:</b> honeypot and per-IP limit on the enquiry form; login lock-out after 5 failures per email + IP for 15 minutes; a dummy password check for unknown emails, so response time does not reveal which accounts exist.</li>
   <li><b>Headers:</b> nosniff, frame options, referrer policy, permissions policy; admin, account, preview and quote pages are noindex.</li>
   <li><b>DPDP Act 2023:</b> purpose-specific consent on the form; separate, recorded WhatsApp consent enforced at send time; editors cannot see personal data; a plain privacy notice; fictional demo data only (example.com addresses).</li>
-  <li><b>Tests:</b> 107 unit tests (pricing and GST rounding, season wrap-around and gaps, extraction on 24 phrasings, LLM merge, suggestions, draft price integrity, working-hours SLA, assignment, versioning, search, Markdown safety, related-post suggestions, team lock-out rules, redirect validation) and 21 Playwright runs on desktop and phone (search, prices, draft 404, redirects including case and trailing slash, validation, the sample enquiry end to end, quote PDF, access control, publish updating the live page, publish blocked by a checklist error, writing and publishing a post, importing old URLs, adding and deactivating staff).</li>
+  <li><b>Tests:</b> 110 unit tests (pricing and GST rounding, season wrap-around and gaps, extraction on 24 phrasings, LLM merge, suggestions, draft price integrity, working-hours SLA, assignment, versioning, search, Markdown safety, related-post suggestions, team lock-out rules, redirect validation, edit-conflict fingerprints) and 22 Playwright runs on desktop and phone (search, prices, draft 404, redirects including case and trailing slash, validation, the sample enquiry end to end, quote PDF, access control, publish updating the live page, publish blocked by a checklist error, writing and publishing a post, importing old URLs, adding and deactivating staff, two editors saving the same package).</li>
 </ul>
 
 <h2>8. Assumptions (labelled)</h2>
@@ -248,7 +249,7 @@
 <ul>
   <li>Scheduled releases go live within about 60 seconds of their time (page revalidation window), not to the second.</li>
   <li>The login and enquiry rate limits are in memory per server; several instances would need a shared store.</li>
-  <li>One draft per package: two editors working on the same package at once would overwrite each other (last save wins). The next step is an edit lock or a version check on save.</li>
+  <li>Edit conflicts are detected and refused, not merged: the second editor reloads and re-applies their change. Fine for a content team of a few people; a larger team would want field-level merging or live presence.</li>
   <li>Photos live in the database; at scale they belong in object storage behind a CDN.</li>
   <li>Redirect changes take effect within 30 seconds (the proxy’s cache). A live journal post can’t be re-scheduled; updates to it publish immediately.</li>
   <li>When the admin area streams a not-found page, the HTTP status is 200 (the content is still withheld); a dedicated access-denied route would return 403/404.</li>
@@ -259,7 +260,7 @@
   <li>Measure the AI on real traffic: log consultant corrections per field to get accuracy figures, and tune the rules (or enable the LLM) where corrections cluster.</li>
   <li>Hindi and German routes with hreflang, starting with the public site and package content.</li>
   <li>Import the real 140 old URLs through the Old URLs screen; connect Search Console; monitor Core Web Vitals in the field.</li>
-  <li>Edit locking, email invitations for new staff, a holiday calendar for the reply clock, and a retention job for DPDP.</li>
+  <li>Email invitations for new staff, a holiday calendar for the reply clock, and a retention job for DPDP.</li>
 </ol>
 
 <p class="small" style="margin-top:16pt">Repository structure: <code>src/lib</code> pure domain and AI logic with tests · <code>src/server</code> data access and services · <code>src/app</code> routes, pages and server actions · <code>scripts</code> seed, photos, perf and screenshots · <code>e2e</code> Playwright tests · <code>drizzle</code> SQL migrations.</p>

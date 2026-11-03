@@ -18,7 +18,7 @@ packages and drafted a reply with prices taken from the price table.
 | Area | Highlights |
 | --- | --- |
 | Public site | Home, search with filters, destination pages, package pages with day-by-day itinerary, hotels, seasonal price table, live price calculator, route map, one Enquire button. Server-rendered, cached, sitemap, robots, JSON-LD, 308 redirects from old URLs. |
-| Package CMS | Create, edit, duplicate, seasonal prices with gap and overlap checks, photos (library or upload), preview, signed share link, publish now or schedule, version history with diffs, restore, unpublish. |
+| Package CMS | Create, edit, duplicate, seasonal prices with gap and overlap checks, photos (library or upload), preview, signed share link, publish now or schedule, version history with diffs, restore, unpublish. Two editors can't overwrite each other's saves. |
 | Journal | Blog CMS with toolbar editor and live preview, categories, SEO fields, package cards inside posts, related trips under each post (with suggestions from the text), and links back from package pages. |
 | Old URLs and team | Admin-managed 308 redirects for the old site with a checked CSV import and visit counts. Team screen to add staff, change roles, reset passwords and deactivate safely. |
 | Enquiries | Web form with consent, simulated WhatsApp, email and chat webhook, logging of phone calls. Instant acknowledgement, auto-assignment, one-working-hour reply timer, notes, status, quotes as link and PDF. |
@@ -40,8 +40,8 @@ Demo accounts (password `kayal-demo-2026`): `admin@example.com`, `editor@example
 ## Tests
 
 ```bash
-npm test            # 107 unit tests: pricing, extraction, suggestions, SLA, versions, Markdown, team rules, redirects
-npm run build && npm run test:e2e   # 21 Playwright runs, desktop and phone (resets demo data)
+npm test            # 110 unit tests: pricing, extraction, suggestions, SLA, versions, Markdown, team rules, redirects
+npm run build && npm run test:e2e   # 22 Playwright runs, desktop and phone (resets demo data)
 node scripts/perf.mjs               # LCP on throttled slow 4G, needs a running production server
 ```
 

@@ -35,8 +35,8 @@ Useful commands:
 | Command | What it does |
 | --- | --- |
 | `npm run db:reset` | Wipes and reloads the demo data. Timers and dates are relative to now, so run it before a demo. |
-| `npm test` | 107 unit tests (Vitest). |
-| `npm run test:e2e` | 21 Playwright browser runs. Run `npm run build` first; this resets the demo data. First time only: `npx playwright install chromium`. |
+| `npm test` | 110 unit tests (Vitest). |
+| `npm run test:e2e` | 22 Playwright browser runs. Run `npm run build` first; this resets the demo data. First time only: `npx playwright install chromium`. |
 | `npm run lint` / `npm run typecheck` | ESLint and TypeScript checks. |
 | `node scripts/perf.mjs` | Measures page load (LCP) under throttled slow 4G against a running server. |
 
