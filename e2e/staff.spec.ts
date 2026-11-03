@@ -38,7 +38,7 @@ test("consultant creates a quote priced from the table and the PDF renders", asy
   await page.fill("#q-ch", "1");
   await expect(page.locator("#quote").locator("..").getByText("₹85,313")).toBeVisible();
   await page.getByRole("button", { name: "Create quote" }).click();
-  await expect(page.getByText(/Quote Q-\d{4}-\d{4} created/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /Quote Q-\d{4}-\d{4} created/ })).toBeVisible();
   const href = await page.getByRole("link", { name: "PDF" }).first().getAttribute("href");
   const pdf = await request.get(href!);
   expect(pdf.headers()["content-type"]).toBe("application/pdf");
