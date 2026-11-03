@@ -1,4 +1,4 @@
-import type { Role } from "@/db/schema";
+import type { Role } from "@/lib/constants";
 
 /** Single source of truth for who may do what. Checked on the server for every action. */
 export const PERMISSIONS = {

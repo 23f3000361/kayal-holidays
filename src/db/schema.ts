@@ -2,12 +2,13 @@ import { sqliteTable, text, integer, index, uniqueIndex, blob } from "drizzle-or
 import type { PackageContent } from "@/lib/package-content";
 import type { Extraction } from "@/lib/ai/extract";
 import type { PriceBreakdown } from "@/lib/pricing";
+import { ROLES, CHANNELS, STATUSES } from "@/lib/constants";
+export { ROLES, CHANNELS, STATUSES } from "@/lib/constants";
+export type { Role, Channel, EnquiryStatus } from "@/lib/constants";
 
 const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
 const createdAt = () => integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date());
 
-export const ROLES = ["admin", "editor", "consultant", "traveller"] as const;
-export type Role = (typeof ROLES)[number];
 
 export const users = sqliteTable("users", {
   id: id(),
@@ -67,10 +68,6 @@ export const media = sqliteTable("media", {
   createdAt: createdAt(),
 });
 
-export const CHANNELS = ["web", "chat", "whatsapp", "email", "phone"] as const;
-export type Channel = (typeof CHANNELS)[number];
-export const STATUSES = ["new", "replied", "quoted", "booked", "lost", "spam"] as const;
-export type EnquiryStatus = (typeof STATUSES)[number];
 
 export const enquiries = sqliteTable(
   "enquiries",
