@@ -10,13 +10,13 @@ export function PriceBasis({ gst, className }: { gst: number; className?: string
   return <span className={className}>per person, twin sharing, plus {gst}% GST</span>;
 }
 
-export function PackageView({ content: c, packageId, code, preview = false }: { content: PackageContent; packageId: string; code: string; preview?: boolean }) {
+export function PackageView({ content: c, slug, code, preview = false }: { content: PackageContent; slug: string; code: string; preview?: boolean }) {
   const from = lowestPrice(c);
   const [cover, ...rest] = c.photos;
   const gaps = seasonCoverage(c.seasons).gaps;
 
   return (
-    <article>
+    <article className="pb-20 lg:pb-0">
       {/* Full-bleed cover */}
       <div className="relative h-[52vh] min-h-[320px] w-full bg-sand sm:h-[64vh]">
         {cover && <Image src={cover.src} alt={cover.alt} fill priority sizes="100vw" className="object-cover" />}
@@ -173,7 +173,7 @@ export function PackageView({ content: c, packageId, code, preview = false }: { 
             <h2 className="font-display text-2xl text-ink">Enquire about this trip</h2>
             <p className="mt-1 text-sm text-muted">A consultant replies within one working hour with availability and an exact price. No payment needed.</p>
             <div className="mt-6">
-              <EnquiryForm packageId={packageId} packageTitle={c.title} disabled={preview} />
+              <EnquiryForm packageSlug={slug} packageTitle={c.title} disabled={preview} />
             </div>
           </section>
         </div>

@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 import type { ComponentProps, ReactNode } from "react";
 
-export const cx = clsx;
+/** clsx + tailwind-merge, so later classes win over conflicting earlier ones. */
+export const cx = (...v: ClassValue[]) => twMerge(clsx(v));
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
 const variants: Record<Variant, string> = {

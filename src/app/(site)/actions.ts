@@ -18,7 +18,7 @@ const enquirySchema = z.object({
   adults: z.coerce.number().int().min(1, "At least one adult").max(60),
   children: z.coerce.number().int().min(0).max(30),
   message: z.string().trim().min(10, "Tell us a little about the trip you have in mind").max(3000),
-  packageId: optional(z.string().uuid()),
+  package: optional(z.string().regex(/^[a-z0-9-]{1,80}$/)),
   consent: z.literal("on", { message: "Please agree so we can reply to you" }),
   whatsapp: z.literal("on").optional(),
   website: z.string().max(0).optional(), // honeypot: real people never see this field
@@ -49,8 +49,9 @@ export async function submitEnquiry(_: EnquiryFormState, formData: FormData): Pr
 
   const v = parsed.data;
   let packageId: string | null = null;
-  if (v.packageId) {
-    const [p] = await db.select({ id: s.packages.id }).from(s.packages).where(eq(s.packages.id, v.packageId)).limit(1);
+  if (v.package) {
+    // Slug, not id: static pages stay valid even if the database is restored or reseeded.
+    const [p] = await db.select({ id: s.packages.id }).from(s.packages).where(eq(s.packages.slug, v.package)).limit(1);
     packageId = p?.id ?? null;
   }
   const user = await getCurrentUser();

@@ -120,9 +120,20 @@ async function main() {
   const lastAssigned: Record<string, Date> = {};
   const names: Record<string, string> = { anjali: "Anjali Pillai", rahul: "Rahul Menon", fatima: "Fatima Rasheed" };
 
-  for (const e of [...SEEDS].reverse()) {
+  // Older enquiries land inside working hours (Mon–Sat, 10:00–16:30 IST) so reply times are realistic
+  // whatever time of day the seed runs; today's enquiries stay relative to "now" so the timers are live.
+  const atWorkingTime = (minutesAgo: number, i: number) => {
+    const d = ago(minutesAgo * MIN);
+    if (minutesAgo < 1440) return d;
+    const ist = new Date(d.getTime() + 330 * MIN);
+    if (ist.getUTCDay() === 0) ist.setUTCDate(ist.getUTCDate() - 1);
+    ist.setUTCHours(10 + (i % 6), (i * 17) % 60, 0, 0);
+    return new Date(ist.getTime() - 330 * MIN);
+  };
+
+  for (const [i, e] of [...SEEDS].reverse().entries()) {
     enqNo++;
-    const createdAt = ago(e.minutesAgo * MIN);
+    const createdAt = atWorkingTime(e.minutesAgo, i);
     const ref = `ENQ-${enqNo}`;
     const extraction = extractRules(e.message, createdAt);
     const assignedToId = e.assign ? U[e.assign] : null;

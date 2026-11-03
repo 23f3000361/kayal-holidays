@@ -49,7 +49,7 @@ export default async function PackagePage({ params }: { params: Promise<{ slug: 
         <Link href="/packages" className="hover:text-ink">Packages</Link> <span aria-hidden>/</span>{" "}
         <Link href={`/destinations/${regionSlug(c.region)}`} className="hover:text-ink">{c.region}</Link> <span aria-hidden>/</span> <span className="text-ink-2">{c.title}</span>
       </nav>
-      <PackageView content={c} packageId={p.id} code={p.code} />
+      <PackageView content={c} slug={p.slug} code={p.code} />
     </>
   );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { submitEnquiry, type EnquiryFormState } from "@/app/(site)/actions";
 import { Alert, Field, Spinner, buttonClass, inputClass, cx } from "@/components/ui";
 
-export function EnquiryForm({ packageId, packageTitle, disabled }: { packageId?: string; packageTitle?: string; disabled?: boolean }) {
+export function EnquiryForm({ packageSlug, packageTitle, disabled }: { packageSlug?: string; packageTitle?: string; disabled?: boolean }) {
   const [state, action, pending] = useActionState<EnquiryFormState, FormData>(submitEnquiry, {});
   const v = state.values ?? {};
   const e = state.errors ?? {};
@@ -16,7 +16,7 @@ export function EnquiryForm({ packageId, packageTitle, disabled }: { packageId?:
     <form action={action} className="space-y-5" noValidate>
       {state.formError && <Alert tone="danger">{state.formError}</Alert>}
       {disabled && <Alert tone="info">This is a preview. The form is switched off until the package is published.</Alert>}
-      {packageId && <input type="hidden" name="packageId" value={packageId} />}
+      {packageSlug && <input type="hidden" name="package" value={packageSlug} />}
       <div className="hidden" aria-hidden>
         <label>Website <input name="website" tabIndex={-1} autoComplete="off" /></label>
       </div>

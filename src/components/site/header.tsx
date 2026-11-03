@@ -24,10 +24,11 @@ export function Logo({ light }: { light?: boolean }) {
 export function SiteHeader() {
   const path = usePathname();
   const overlay = path === "/";
-  const [open, setOpen] = useState(false);
+  // The menu belongs to the path it was opened on, so navigating closes it without an effect.
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const open = openOn === path;
   const [scrolled, setScrolled] = useState(false);
 
-  useEffect(() => setOpen(false), [path]);
   useEffect(() => {
     if (!overlay) return;
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -55,7 +56,7 @@ export function SiteHeader() {
           <Link href="/enquire" className={cx(buttonClass("primary", "sm"), "hidden sm:inline-flex", light && "bg-white text-ink hover:bg-white/90")}>
             Plan a trip
           </Link>
-          <button className={cx("rounded-md p-2 md:hidden", light ? "text-white" : "text-ink")} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          <button className={cx("rounded-md p-2 md:hidden", light ? "text-white" : "text-ink")} aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} onClick={() => setOpenOn(open ? null : path)}>
             {open ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
