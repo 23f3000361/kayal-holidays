@@ -24,7 +24,7 @@ async function resize(file: File): Promise<{ blob: Blob; width: number; height: 
   return { blob, width: w, height: h };
 }
 
-export function PhotosEditor({ value, onChange, library, canUpload }: { value: Photo[]; onChange: (v: Photo[]) => void; library: LibraryItem[]; canUpload: boolean }) {
+export function PhotosEditor({ value, onChange, library, canUpload, compact }: { value: Photo[]; onChange: (v: Photo[]) => void; library: LibraryItem[]; canUpload: boolean; compact?: boolean }) {
   const [picking, setPicking] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +65,7 @@ export function PhotosEditor({ value, onChange, library, canUpload }: { value: P
       {value.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line-strong p-6 text-center text-sm text-muted">No photos yet. The first photo becomes the full-width cover.</p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className={cx("grid gap-4", !compact && "sm:grid-cols-2 xl:grid-cols-3")}>
           {value.map((p, i) => (
             <li key={p.src} className="overflow-hidden rounded-lg border border-line">
               <div className="relative aspect-[4/3] bg-sand">
@@ -97,7 +97,7 @@ export function PhotosEditor({ value, onChange, library, canUpload }: { value: P
         )}
       </div>
       {picking && (
-        <ul className="grid max-h-96 grid-cols-3 gap-2 overflow-y-auto rounded-lg border border-line p-2 sm:grid-cols-4 lg:grid-cols-6">
+        <ul className={cx("grid max-h-96 grid-cols-3 gap-2 overflow-y-auto rounded-lg border border-line p-2", !compact && "sm:grid-cols-4 lg:grid-cols-6")}>
           {all.map((p) => (
             <li key={p.src}>
               <button type="button" disabled={chosen.has(p.src)} onClick={() => onChange([...value, p])} className="relative block aspect-square w-full overflow-hidden rounded-md bg-sand disabled:opacity-40" aria-label={`Add ${p.alt || p.src}`}>

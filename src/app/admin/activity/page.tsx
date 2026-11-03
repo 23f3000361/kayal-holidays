@@ -8,7 +8,7 @@ import { PageBody, PageHeader } from "@/components/admin/bits";
 export const metadata: Metadata = { title: "Activity" };
 export const dynamic = "force-dynamic";
 
-const KINDS = [["", "Everything"], ["package.", "Packages"], ["enquiry.", "Enquiries"], ["quote.", "Quotes"], ["auth.", "Sign-ins"], ["media.", "Uploads"]] as const;
+const KINDS = [["", "Everything"], ["package.", "Packages"], ["post.", "Journal"], ["enquiry.", "Enquiries"], ["quote.", "Quotes"], ["auth.", "Sign-ins"], ["media.", "Uploads"]] as const;
 
 export default async function ActivityPage({ searchParams }: { searchParams: Promise<{ kind?: string }> }) {
   await requireUser("audit.view", "/admin/activity");
