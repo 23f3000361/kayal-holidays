@@ -12,7 +12,7 @@ export default async function UsersPage() {
   const { staff, travellers } = await listStaff();
   return (
     <>
-      <PageHeader title="Team" subtitle={`Who can sign in to the admin, and what they can do. ${travellers} traveller account${travellers === 1 ? "" : "s"} manage themselves.`} />
+      <PageHeader title="Team" subtitle={`Who can sign in to the admin, and what they can do. Traveller accounts (${travellers}) are managed by the travellers themselves.`} />
       <PageBody className="max-w-5xl">
         <StaffManager meId={me.id} staff={staff.map((u) => ({ ...u, createdAt: u.createdAt.toISOString() }))} />
       </PageBody>
